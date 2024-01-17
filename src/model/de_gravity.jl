@@ -1,0 +1,312 @@
+######### Kirchhoff rod kinematics and mechanics
+######### With external forces
+#region ===========================
+"""
+    $(TYPEDSIGNATURES)
+
+In-place DE function for the mechanics of the Kirchhoff filament
+under gravity for non-symbolic computations.
+
+The parameter `p` has the following structure:
+-   `p[1]` = `g::Float64` = gravitational acceleration
+-   `p[2]` = `filament::AFilament`
+-   `p[3]` = `precomputedQuantities::SMatrix` = precomputed quantities matrix
+
+The unknown function u has the following structure:
+`(u[1], u[2], u[3])` = r = filament centerline along `Z`
+
+`(
+    (u[4], u[5], u[6]),
+    (u[7], u[8], u[9]),
+    (u[10], u[11], u[12])
+)`   = `(d1, d2, d3)` = director basis along `Z`
+
+`(u[13], u[14], u[15])` = moments along `Z`
+"""
+function selfWeightDE!(du, u, p::Tuple{Float64, Function, SVector{4, Float64}, <:AbstractMatrix}, Z)
+    # p[1] = g
+    # p[2] = filament
+    # p[3] = precomputed quantities (converted to static array)
+    # ζ_hat, u1_hat, u2_hat, u3_hat = computeUHatSA(Z, p[3]);
+    ζ_hat, u1_hat, u2_hat, u3_hat = computeUHatSA(Z, p[4]);
+    # filament = p[2];
+
+    # ρlinInt1 = (filament.m / p[4]) * ζ_hat * (filament.L - Z); # Assuming constant ζ_hat (which is the case for no variation in Z)
+
+    # NEWEST. Actually, for constant extensions, this is the same as the first one, but this is correct generally for homogeneous volumetric density, non-tapered conf. See correction of SM.
+    # ρlinInt = filament.m / filament.L * (filament.L - Z); 
+    # ρlinInt = filament.auxiliary.ρlin0Int(Z);
+    ρlinInt = p[2](Z);
+    
+    n1 = -p[1] * ρlinInt * u[6];
+    n2 = -p[1] * ρlinInt * u[9];
+    n3 = -p[1] * ρlinInt * u[12];
+
+    ζF = n3 / p[3][1] + 1.0;
+    ζ = ζ_hat * ζF;
+    u1 = u1_hat + u[13] / p[3][2];
+    u2 = u2_hat + u[14] / p[3][3];
+    u3 = u3_hat + u[15] / p[3][4];
+
+    du[1] = ζ * u[10];
+    du[2] = ζ * u[11];
+    du[3] = ζ * u[12];
+    du[4] = ζ_hat * (u3 * u[7] - u2 * u[10]);
+    du[5] = ζ_hat * (u3 * u[8] - u2 * u[11]);
+    du[6] = ζ_hat * (u3 * u[9] - u2 * u[12]);
+    du[7] = ζ_hat * (u1 * u[10] - u3 * u[4]);
+    du[8] = ζ_hat * (u1 * u[11] - u3 * u[5]);
+    du[9] = ζ_hat * (u1 * u[12] - u3 * u[6]);
+    du[10] = ζ_hat * (u2 * u[4] - u1 * u[7]);
+    du[11] = ζ_hat * (u2 * u[5] - u1 * u[8]);
+    du[12] = ζ_hat * (u2 * u[6] - u1 * u[9]);
+    du[13] = ζ_hat * (u3 * u[14] - u2 * u[15]) + ζ * n2;
+    du[14] = ζ_hat * (u1 * u[15] - u3 * u[13]) - ζ * n1;
+    du[15] = ζ_hat * (u2 * u[13] - u1 * u[14]);
+end
+
+# Tapered
+function selfWeightDE!(du, u, p::Tuple{Float64, Function, SVector{4, <:AbstractInterpolation}, Tuple}, Z)
+    ζ_hat, u1_hat, u2_hat, u3_hat = computeUHatSA(Z, p[4]);
+    ρlinInt = p[2](Z);
+    
+    n1 = -p[1] * ρlinInt * u[6];
+    n2 = -p[1] * ρlinInt * u[9];
+    n3 = -p[1] * ρlinInt * u[12];
+
+    ζF = n3 / p[3][1](Z) + 1.0;
+    ζ = ζ_hat * ζF;
+    u1 = u1_hat + u[13] / p[3][2](Z);
+    u2 = u2_hat + u[14] / p[3][3](Z);
+    u3 = u3_hat + u[15] / p[3][4](Z);
+
+    du[1] = ζ * u[10];
+    du[2] = ζ * u[11];
+    du[3] = ζ * u[12];
+    du[4] = ζ_hat * (u3 * u[7] - u2 * u[10]);
+    du[5] = ζ_hat * (u3 * u[8] - u2 * u[11]);
+    du[6] = ζ_hat * (u3 * u[9] - u2 * u[12]);
+    du[7] = ζ_hat * (u1 * u[10] - u3 * u[4]);
+    du[8] = ζ_hat * (u1 * u[11] - u3 * u[5]);
+    du[9] = ζ_hat * (u1 * u[12] - u3 * u[6]);
+    du[10] = ζ_hat * (u2 * u[4] - u1 * u[7]);
+    du[11] = ζ_hat * (u2 * u[5] - u1 * u[8]);
+    du[12] = ζ_hat * (u2 * u[6] - u1 * u[9]);
+    du[13] = ζ_hat * (u3 * u[14] - u2 * u[15]) + ζ * n2;
+    du[14] = ζ_hat * (u1 * u[15] - u3 * u[13]) - ζ * n1;
+    du[15] = ζ_hat * (u2 * u[13] - u1 * u[14]);
+end
+
+"""
+    $(TYPEDSIGNATURES)
+
+In-place DE function for the mechanics of the Kirchhoff filament
+under gravity for symbolic computations.
+
+The parameter `p` has the following structure:
+-   `p[1]` = `g::Float64` = gravitational acceleration
+-   `p[2]` = `filament::AFilament`
+-   `p[3]` = `u_f` = runtime-generated functions for `ζ_hat`, `u1_hat`, `u2_hat`, `u3_hat`, and `ζ_hat_AD`
+
+The unknown function u has the following structure:
+`(u[1], u[2], u[3])` = r = filament centerline along `Z`
+
+`(
+    (u[4], u[5], u[6]),
+    (u[7], u[8], u[9]),
+    (u[10], u[11], u[12])
+)`   = `(d1, d2, d3)` = director basis along `Z`
+
+`(u[13], u[14], u[15])` = moments along `Z`
+"""
+function selfWeightDESym!(du, u, p, Z)
+    # p[1] = g
+    # p[2] = filament
+    # p[3] = u_f
+    u_f = p[3];
+    ζ_hat, u1_hat, u2_hat, u3_hat = [u_f[1](Z), u_f[2](Z), u_f[3](Z), u_f[4](Z)];
+    filament = p[2];
+
+    # ρlinInt = (filament.m / p[4]) * evaluate_integral_AD(u_f[5], Z, filament.L);
+    # ρlinInt = ζ_hat * (filament.ρvol * pi * filament.R0^2) * (filament.L - Z); # Assuming constant ζ_hat
+
+    # NOTE 1: For constant zetaHat, this is the same as the old version
+    # NOTE 2: SEE TestingDiff.nb in Mathematica. For piecewise constant helical angle (hence, piecewise constant zetaHat), the old version
+    # ρlinInt = (filament.m / p[4]) * evaluate_integral_AD(u_f[5], Z, filament.L)
+    # is quite close numerically (difference impercetible in plots) to the corrected version below. This happens if the zetaHat in the 
+    # helical portion is not significantly different than the zetaHat in the longitudinal portion or if the helical portion is a 
+    # small segment of the overall filament.
+    ρlinInt = filament.m / filament.L * (filament.L - Z); # Newest, assuming homogeneous volumetric density in initial conf. and non-tapered
+
+    n1 = -p[1] * ρlinInt * u[6];
+    n2 = -p[1] * ρlinInt * u[9];
+    n3 = -p[1] * ρlinInt * u[12];
+
+    ζF = n3 / filament.stiffness.K0 + 1.0;
+    ζ = ζ_hat * ζF;
+    u1 = u1_hat + u[13] / filament.stiffness.K1;
+    u2 = u2_hat + u[14] / filament.stiffness.K2;
+    u3 = u3_hat + u[15] / filament.stiffness.K3;
+
+    du[1] = ζ * u[10];
+    du[2] = ζ * u[11];
+    du[3] = ζ * u[12];
+    du[4] = ζ_hat * (u3 * u[7] - u2 * u[10]);
+    du[5] = ζ_hat * (u3 * u[8] - u2 * u[11]);
+    du[6] = ζ_hat * (u3 * u[9] - u2 * u[12]);
+    du[7] = ζ_hat * (u1 * u[10] - u3 * u[4]);
+    du[8] = ζ_hat * (u1 * u[11] - u3 * u[5]);
+    du[9] = ζ_hat * (u1 * u[12] - u3 * u[6]);
+    du[10] = ζ_hat * (u2 * u[4] - u1 * u[7]);
+    du[11] = ζ_hat * (u2 * u[5] - u1 * u[8]);
+    du[12] = ζ_hat * (u2 * u[6] - u1 * u[9]);
+    du[13] = ζ_hat * (u3 * u[14] - u2 * u[15]) + ζ * n2;
+    du[14] = ζ_hat * (u1 * u[15] - u3 * u[13]) - ζ * n1;
+    du[15] = ζ_hat * (u2 * u[13] - u1 * u[14]);
+end
+
+"""
+    $(TYPEDSIGNATURES)
+
+In-place DE function for the mechanics of the Kirchhoff filament
+under gravity. Use for non-symbolic computation on the GPU.
+
+The parameter `p` has the following structure:
+-   `p[1]` = `g::Float32` = gravitational acceleration
+-   `p[2]` = `filament::AFilamentGPU`
+-   `p[3]` = `precomputedQuantities::SMatrix` = precomputed quantities matrix
+
+The unknown function u has the following structure:
+`(u[1], u[2], u[3])` = r = filament centerline along `Z`
+
+`(
+    (u[4], u[5], u[6]),
+    (u[7], u[8], u[9]),
+    (u[10], u[11], u[12])
+)`   = `(d1, d2, d3)` = director basis along `Z`
+
+`(u[13], u[14], u[15])` = moments along `Z`
+"""
+function selfWeightDE_GPU!(du, u, p, Z) # has to be in-place for BVP solvers?
+    # p[1] = g
+    # p[2] = filament
+    # p[3] = precomputedQuantities
+    ζ_hat, u1_hat, u2_hat, u3_hat = computeUHatGPU(Z, p[3]);
+    filament = p[2];
+
+    ρlinInt = ζ_hat * filament.ρlin * (filament.L - Z); # Assuming constant ζ_hat
+    
+    n1 = -p[1] * ρlinInt * u[6];
+    n2 = -p[1] * ρlinInt * u[9];
+    n3 = -p[1] * ρlinInt * u[12];
+
+    ζF = n3 / filament.stiffness.K0 + 1.0f0;
+    ζ = ζ_hat * ζF;
+    u1 = u1_hat + u[13] / filament.stiffness.K1;
+    u2 = u2_hat + u[14] / filament.stiffness.K2;
+    u3 = u3_hat + u[15] / filament.stiffness.K3;
+
+    du[1] = ζ * u[10];
+    du[2] = ζ * u[11];
+    du[3] = ζ * u[12];
+    du[4] = ζ * (u3 * u[7] - u2 * u[10]);
+    du[5] = ζ * (u3 * u[8] - u2 * u[11]);
+    du[6] = ζ * (u3 * u[9] - u2 * u[12]);
+    du[7] = ζ * (u1 * u[10] - u3 * u[4]);
+    du[8] = ζ * (u1 * u[11] - u3 * u[5]);
+    du[9] = ζ * (u1 * u[12] - u3 * u[6]);
+    du[10] = ζ * (u2 * u[4] - u1 * u[7]);
+    du[11] = ζ * (u2 * u[5] - u1 * u[8]);
+    du[12] = ζ * (u2 * u[6] - u1 * u[9]);
+    du[13] = u3 * u[14] - u2 * u[15] + n2;
+    du[14] = u1 * u[15] - u3 * u[13] - n1;
+    du[15] = u2 * u[13] - u1 * u[14];
+end
+
+"""
+    $(TYPEDSIGNATURES)
+
+In-place boundary condition function that defines the
+residuals that are to become identically zero to solve the
+corresponding BVP. To be used with numerical Float32 GPU computation.
+
+The unknown function u has the following structure:
+`(u[1], u[2], u[3])` = r = filament centerline along `Z`
+
+`(
+    (u[4], u[5], u[6]),
+    (u[7], u[8], u[9]),
+    (u[10], u[11], u[12])
+)`   = `(d1, d2, d3)` = director basis along `Z`
+
+`(u[13], u[14], u[15])` = moments along `Z`
+
+The residuals to be satisifed are:
+-   `r(0)` = (0, 0, 0)
+-   `d1(0)` = (1, 0, 0)
+-   `d2(0)` = (0, 1, 0)
+-   `d3(0)` = (0, 0, 1)
+-   `m(L)`  = (0, 0, 0)
+"""
+function selfWeightBC_GPU!(residual, u, p, t)
+    residual[1] = u[1][1] - 0.0f0;
+    residual[2] = u[1][2] - 0.0f0;
+    residual[3] = u[1][3] - 0.0f0;
+    residual[4] = u[1][4] - 1.0f0;
+    residual[5] = u[1][5] - 0.0f0;
+    residual[6] = u[1][6] - 0.0f0;
+    residual[7] = u[1][7] - 0.0f0;
+    residual[8] = u[1][8] - 1.0f0;
+    residual[9] = u[1][9] - 0.0f0;
+    residual[10] = u[1][10] - 0.0f0;
+    residual[11] = u[1][11] - 0.0f0;
+    residual[12] = u[1][12] - 1.0f0;
+    residual[13] = u[end][13] - 0.0f0;
+    residual[14] = u[end][14] - 0.0f0;
+    residual[15] = u[end][15] - 0.0f0;
+end
+
+"""
+    $(TYPEDSIGNATURES)
+
+In-place boundary condition function that defines the
+residuals that are to become identically zero to solve the
+corresponding BVP. To be used with symbolic or numerical
+computations.
+
+The unknown function u has the following structure:
+`(u[1], u[2], u[3])` = r = filament centerline along `Z`
+
+`(
+    (u[4], u[5], u[6]),
+    (u[7], u[8], u[9]),
+    (u[10], u[11], u[12])
+)`   = `(d1, d2, d3)` = director basis along `Z`
+
+`(u[13], u[14], u[15])` = moments along `Z`
+
+The residuals to be satisifed are:
+-   `r(0)` = (0, 0, 0)
+-   `d1(0)` = (1, 0, 0)
+-   `d2(0)` = (0, 1, 0)
+-   `d3(0)` = (0, 0, 1)
+-   `m(L)`  = (0, 0, 0)
+"""
+function selfWeightBC!(residual, u, p, t)
+    residual[1] = u[1][1] - 0.0;
+    residual[2] = u[1][2] - 0.0;
+    residual[3] = u[1][3] - 0.0;
+    residual[4] = u[1][4] - 1.0;
+    residual[5] = u[1][5] - 0.0;
+    residual[6] = u[1][6] - 0.0;
+    residual[7] = u[1][7] - 0.0;
+    residual[8] = u[1][8] - 1.0;
+    residual[9] = u[1][9] - 0.0;
+    residual[10] = u[1][10] - 0.0;
+    residual[11] = u[1][11] - 0.0;
+    residual[12] = u[1][12] - 1.0;
+    residual[13] = u[end][13] - 0.0;
+    residual[14] = u[end][14] - 0.0;
+    residual[15] = u[end][15] - 0.0;
+end
+#endregion ===========================
