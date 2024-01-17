@@ -23,7 +23,6 @@ using Plots;
 using Rotations;
 using LinearAlgebra;
 using BenchmarkTools;
-using GLMakie;
 using CSV;
 using Tables;
 using DataFrames;
