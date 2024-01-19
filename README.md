@@ -46,7 +46,7 @@ The deformation due to the above activation without external loading can then be
 sol = solveIntrinsic(filament, activation)
 ```
 The resulting `sol` structure contains the following interpolating functions:
-$$\texttt{sol}(Z) = [r_X(Z), r_Y(Z), r_Z(Z), d_{1X}(Z), d_{1Y}(Z), d_{1Z}(Z), d_{2X}(Z), d_{2Y}(Z), d_{2Z}(Z), d_{3X}(Z), d_{3Y}(Z), d_{3Z}(Z)]$$
+$$\texttt{sol}(Z) = \big[r_X(Z), r_Y(Z), r_Z(Z), d_{1X}(Z), d_{1Y}(Z), d_{1Z}(Z), d_{2X}(Z), d_{2Y}(Z), d_{2Z}(Z), d_{3X}(Z), d_{3Y}(Z), d_{3Z}(Z)\big]$$
 For example, evaluating `sol` at $L / 10$ gives
 ```julia
 julia> sol(L / 10.0)
