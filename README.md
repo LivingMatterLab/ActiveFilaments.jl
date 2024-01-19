@@ -3,7 +3,7 @@ ActiveFilaments.jl is a computationally efficient Julia implementation of the me
 
 [Kaczmarski, B., Moulton, D. E., Kuhl, E. & Goriely, A. Active filaments I: Curvature and torsion generation. _Journal of the Mechanics and Physics of Solids_ **164**, 104918 (2022).](https://doi.org/10.1016/j.jmps.2022.104918)
 
-Using this package, you can design the geometry and fiber architecture in a slender structure and simulate its deformation due to fibrillar activation.
+Using this package, you can design the geometry and fiber architecture in a slender structure and simulate its deformation due to fibrillar activation. The package provides a library of analysis tools including fast workspace generation with and without external loading.
 
 # Installation
 Run the following command in Julia 1.10.0+:
