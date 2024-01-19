@@ -10,7 +10,7 @@ function solveIntrinsic(filament::AFilament, activation::Vector{ActivationFourie
 end
 
 function solveIntrinsic(filament::AFilament, activation::Vector{ActivationPiecewiseGamma}, u0 = SVector{12, Float64}([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]), Zspan = (0.0, filament.L); kwargs...)
-    activationFourier = [piecewiseGammaToFourier(activation_i) for activation_i in activation];
+    activationFourier = Vector{ActivationFourier}([piecewiseGammaToFourier(activation_i) for activation_i in activation]);
     solveIntrinsic(filament, activationFourier, u0, Zspan; kwargs...)
 end
 #endregion ===========================

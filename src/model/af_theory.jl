@@ -338,25 +338,25 @@ function computeUQuantities(filament::AFilament{1, M} where M, activationsFourie
 end
 
 ### Refactor the two functions below because they are the same apart from the ActivationFourier type
-function computeUQuantities(filament::AFilament{0, M} where M, activationsFourier::Vector{ActivationFourier{T}} where T, prefactors::Vector{Prefactors})
-    uPrefactors = Vector{Prefactors}();
-    ϕ = Vector();
-    argTerms = Vector();
-    for (activationFourier, propertyPrefactors, ring) in zip(activationsFourier, prefactors, filament.rings)
-        a0 = activationFourier.a0;
-        a1 = activationFourier.a1;
-        b1 = activationFourier.b1;
-        A = sqrt(a1^2 + b1^2);
-        R2 = ring.geometry.R2;
-        α2 = ring.fiberArchitecture.α2;
-        push!(ϕ, simplify(-atan(b1, a1)));
-        push!(argTerms, simplify(tan(α2) / R2));
+# function computeUQuantities(filament::AFilament{0, M} where M, activationsFourier::Vector{ActivationFourier{T}} where T, prefactors::Vector{Prefactors})
+#     uPrefactors = Vector{Prefactors}();
+#     ϕ = Vector();
+#     argTerms = Vector();
+#     for (activationFourier, propertyPrefactors, ring) in zip(activationsFourier, prefactors, filament.rings)
+#         a0 = activationFourier.a0;
+#         a1 = activationFourier.a1;
+#         b1 = activationFourier.b1;
+#         A = sqrt(a1^2 + b1^2);
+#         R2 = ring.geometry.R2;
+#         α2 = ring.fiberArchitecture.α2;
+#         push!(ϕ, simplify(-atan(b1, a1)));
+#         push!(argTerms, simplify(tan(α2) / R2));
 
-        push!(uPrefactors, Prefactors(simplify(propertyPrefactors.pre_ζ * a0), simplify(propertyPrefactors.pre_u1 * A), simplify(-propertyPrefactors.pre_u2 * A), simplify(propertyPrefactors.pre_u3 * a0)));
-    end
+#         push!(uPrefactors, Prefactors(simplify(propertyPrefactors.pre_ζ * a0), simplify(propertyPrefactors.pre_u1 * A), simplify(-propertyPrefactors.pre_u2 * A), simplify(propertyPrefactors.pre_u3 * a0)));
+#     end
 
-    PrecomputedQuantities{Float64}(uPrefactors, ϕ, argTerms)
-end
+#     PrecomputedQuantities{Float64}(uPrefactors, ϕ, argTerms)
+# end
 
 function computeUQuantities(filament::AFilament{0, M} where M, activationsFourier::Vector{ActivationFourier}, prefactors::Vector{Prefactors})
     uPrefactors = Vector{Prefactors{Float64}}();

@@ -280,10 +280,14 @@ $(TYPEDFIELDS)
     "Total mass (if tapered, assumes linear tapering)"
     m::Float64 = tapered ? ρvol * pi / 3.0 * L * (R0[1]^2 + R0[1] * R0[end] + R0[end]^2) : ρvol * pi * R0.^2 * L
     "Auxiliary properties" # Double check if the Union here doesn't slow anything down!
-    auxiliary::Union{Nothing, AuxiliaryProperties{A}} = nothing
+    auxiliary::Union{A, AuxiliaryProperties{A}} = nothing
 end
 
 # Outer constructors
+function AFilament(rings::Vector{Ring{T}} where T<:AbstractFloat; L::Float64 = 1.0, ρvol::Float64 = 1000.0)
+    return AFilament{0, 1, Nothing}(L = L, rings = rings, ρvol = ρvol)
+end
+
 function AFilament(N, L, rings0::Vector{Ring{T}} where T<:AbstractFloat, innerTube, ρvol; phi2 = 0, interp = cubic_spline_interpolation)
     Z = LinRange(0.0, L, N)
     @variables Zs;
