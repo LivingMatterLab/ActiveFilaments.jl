@@ -7,14 +7,14 @@ function generateIntrinsicReachVol(filament::AFilament,
         nTrajectories::Int,
         path::String;
         save_gamma_structs = true)
-    println("1")
+    # println("1")
     prefactors = computePropertyPrefactors(filament)
     # precomputedQuantities, activationsGamma = generatePrecomputedQuantitiesSA(filament, activationGamma, gammaBounds, nTrajectories, prefactors) # For alpha = 0 (actually should do the same for each alpha)
 
     M = typeof(filament).parameters[2];
     
     (activationsFourier, activationsGamma) = generateRandomActivations(activationGamma, gammaBounds, M, nTrajectories);
-    println("2")
+    # println("2")
     @time precomputedQuantities = generatePrecomputedQuantitiesSA(filament, activationsFourier, prefactors, nTrajectories);
 
     println("Generated precomputed")

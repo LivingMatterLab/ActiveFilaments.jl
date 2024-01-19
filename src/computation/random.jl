@@ -165,23 +165,6 @@ function generatePrecomputedQuantitiesSA(filament::AFilament{1, M, A} where {M, 
     # (Tuple(precomputedQuantities), activationsGamma)
 end
 
-###
-# Testing...
-function generatePrecomputedQuantitiesSA(filament::AFilament{1, M, A} where {M, A}, activationsFourier::Vector{Vector{ActivationFourier}}, prefactors::Vector{Prefactors}, n::Int)
-    M = typeof(filament).parameters[2];
-    p_all = Array{PrecomputedQuantities{Float64, Interpolations.Extrapolation}}(undef, n)
-    println("Started p_all")
-    Threads.@threads for i in eachindex(activationsFourier)
-        p_all[i] = computeUQuantities(filament, activationsFourier[i], prefactors);
-    end
-    # p_all = [computeUQuantities(filament, activationFourier, prefactors) for activationFourier in activationsFourier];
-    println("Done with p_all")
-
-    return Tuple([Tuple([(p.uPrefactors[j].pre_ζ, p.uPrefactors[j].pre_u1, p.uPrefactors[j].pre_u2, p.uPrefactors[j].pre_u3,
-                    p.ϕ[j], p.argTerms[j]) for j in 1:M]) for p in p_all])
-end
-###
-
 function generatePrecomputedQuantitiesSA(filament::AFilament{0, M, A} where {M, A}, activationGamma::Vector{ActivationPiecewiseGamma}, gammaBounds, n::Int, prefactors::Vector{Prefactors})
     M = typeof(filament).parameters[2];
     (activationsFourier, activationsGamma) = generateRandomActivations(activationGamma, gammaBounds, M, n);
@@ -198,6 +181,41 @@ function generatePrecomputedQuantitiesSA(filament::AFilament{0, M, A} where {M, 
     end
     (precomputedQuantities, activationsGamma)
 end
+
+###
+# Testing...
+function generatePrecomputedQuantitiesSA(filament::AFilament{1, M, A} where {M, A}, activationsFourier::Vector{Vector{ActivationFourier}}, prefactors::Vector{Prefactors}, n::Int)
+    M = typeof(filament).parameters[2];
+    p_all = Array{PrecomputedQuantities{Float64, Interpolations.Extrapolation}}(undef, n)
+    # println("Started p_all")
+    Threads.@threads for i in eachindex(activationsFourier)
+        p_all[i] = computeUQuantities(filament, activationsFourier[i], prefactors);
+    end
+    # p_all = [computeUQuantities(filament, activationFourier, prefactors) for activationFourier in activationsFourier];
+    # println("Done with p_all")
+
+    return Tuple([Tuple([(p.uPrefactors[j].pre_ζ, p.uPrefactors[j].pre_u1, p.uPrefactors[j].pre_u2, p.uPrefactors[j].pre_u3,
+                    p.ϕ[j], p.argTerms[j]) for j in 1:M]) for p in p_all])
+end
+
+function generatePrecomputedQuantitiesSA(filament::AFilament{0, M, A} where {M, A}, activationsFourier::Vector{Vector{ActivationFourier}}, prefactors::Vector{Prefactors}, n::Int)
+    M = typeof(filament).parameters[2];
+    p_all = Vector{SMatrix{M, 6, Float64}}(undef, n);
+    # println("Started p_all")
+    Threads.@threads for i in eachindex(activationsFourier)
+        p = computeUQuantities(filament, activationsFourier[i], prefactors);
+        A = MMatrix{M, 6, Float64}(zeros(M, 6));
+        for j in 1:M
+            A[j, :] = [p.uPrefactors[j].pre_ζ, p.uPrefactors[j].pre_u1, p.uPrefactors[j].pre_u2, p.uPrefactors[j].pre_u3,
+                       p.ϕ[j], p.argTerms[j]];
+        end
+        p_all[i] = SMatrix{M, 6}(A);
+    end
+    # println("Done with p_all")
+
+    return p_all
+end
+###
 
 function generateActivations(activationsGamma::Vector{Vector{ActivationPiecewiseGamma}}, M)
     activationsFourier = Vector{Vector{ActivationFourier}}();

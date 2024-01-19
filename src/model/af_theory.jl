@@ -359,9 +359,9 @@ function computeUQuantities(filament::AFilament{0, M} where M, activationsFourie
 end
 
 function computeUQuantities(filament::AFilament{0, M} where M, activationsFourier::Vector{ActivationFourier}, prefactors::Vector{Prefactors})
-    uPrefactors = Vector{Prefactors}();
-    ϕ = Vector();
-    argTerms = Vector();
+    uPrefactors = Vector{Prefactors{Float64}}();
+    ϕ = Vector{Float64}();
+    argTerms = Vector{Float64}();
     for (activationFourier, propertyPrefactors, ring) in zip(activationsFourier, prefactors, filament.rings)
         a0 = activationFourier.a0;
         a1 = activationFourier.a1;
@@ -372,10 +372,10 @@ function computeUQuantities(filament::AFilament{0, M} where M, activationsFourie
         push!(ϕ, simplify(-atan(b1, a1)));
         push!(argTerms, simplify(tan(α2) / R2));
 
-        push!(uPrefactors, Prefactors(simplify(propertyPrefactors.pre_ζ * a0), simplify(propertyPrefactors.pre_u1 * A), simplify(-propertyPrefactors.pre_u2 * A), simplify(propertyPrefactors.pre_u3 * a0)));
+        push!(uPrefactors, Prefactors{Float64}(simplify(propertyPrefactors.pre_ζ * a0), simplify(propertyPrefactors.pre_u1 * A), simplify(-propertyPrefactors.pre_u2 * A), simplify(propertyPrefactors.pre_u3 * a0)));
     end
 
-    PrecomputedQuantities{Float64}(uPrefactors, ϕ, argTerms)
+    PrecomputedQuantities{Float64, Float64}(uPrefactors, ϕ, argTerms)
 end
 
 function computeUQuantitiesSym(filament::AFilament{0, M} where M, activationsFourier::Vector{ActivationFourier{T}} where T, prefactors::Vector{Prefactors})
