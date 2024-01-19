@@ -17,19 +17,19 @@ In the simplest case of uniform material properties and a single fiber ring, we 
 ```julia
 using ActiveFilaments
 
-# Mechanical properties
+# Mechanical properties of the ring
 E = 1.0e6 # Young's modulus
 ν = 0.5   # Incompressible
 ρ = 1000.0 # Volumetric density
-mech = MechanicalProperties(E, ν) # Mechanical properties of the ring
+mech = MechanicalProperties(E, ν)
 
-# Geometry
+# Geometry of the ring
 L = 1.0 # Length of the filament
 R2 = L / 20.0 # Outer radius of the ring
 R1 = R2 * 0.8 # Inner radius of the ring
-geom = Geometry(R1, R2) # Geometry of the ring
+geom = Geometry(R1, R2)
 
-# Fiber architecture
+# Fiber architecture of the ring
 α2 = pi / 8.0 # Outer helical angle of the fiber architecture
 arch = FiberArchitecture(α2)
 
