@@ -259,12 +259,12 @@ effectively omit the instability anyway.
 $(TYPEDFIELDS)
 """
 @with_kw struct AFilament{V, M, A}
-    "Material coordinate"
-    Z = LinRange(0.0, L, 32)
     "Length of the filament"
     L::Float64 = 1.0
+    "Material coordinate"
+    Z = LinRange(0.0, L, 32)
     "Tapering angle"
-    phi2::Float64 = 0
+    phi2::Float64 = 0.0
     "Tapered designation"
     tapered::Bool = (phi2 != 0)
     "Array of filament rings"
@@ -272,7 +272,7 @@ $(TYPEDFIELDS)
     "Outer radius of the filament"
     R0 = rings[end].geometry.R2
     "Inner tube of the filament"
-    innerTube::InnerTube = InnerTube(rings[1].mechanicalProperties, Geometry(R1 = 0, R2 = rings[1].geometry.R1, phi2 = phi2))
+    innerTube::InnerTube = InnerTube(rings[1].mechanicalProperties, Geometry(R1 = 0.0, R2 = rings[1].geometry.R1, phi2 = phi2))
     "Stiffness definition"
     stiffness::FilamentStiffness = FilamentStiffness(computeK(rings, innerTube))
     "Volumetric density"
