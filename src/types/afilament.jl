@@ -288,7 +288,10 @@ function AFilament(rings::Vector{Ring{T}} where T<:AbstractFloat; L::Float64 = 1
     return AFilament{0, 1, Nothing}(L = L, rings = rings, ρvol = ρvol)
 end
 
-function AFilament(N, L, rings0::Vector{Ring{T}} where T<:AbstractFloat, innerTube, ρvol; phi2 = 0, interp = cubic_spline_interpolation)
+function AFilament(rings0::Vector{Ring{T}} where T<:AbstractFloat; 
+                    N::Integer = 32, L::Float64 = 1.0, phi2::Float64 = 0.0, ρvol::Float64 = 1000.0,
+                    innerTube::InnerTube = InnerTube(rings0[1].mechanicalProperties, Geometry(R1 = 0.0, R2 = rings0[1].geometry.R1, phi2 = phi2)),
+                    interp::Function = cubic_spline_interpolation)
     Z = LinRange(0.0, L, N)
     @variables Zs;
 
@@ -318,14 +321,16 @@ function AFilament(N, L, rings0::Vector{Ring{T}} where T<:AbstractFloat, innerTu
     end
 
     stiffness = FilamentStiffness(computeK(rings, innerTube))
-    # stiffness_aux = phi2 != 0 ? FilamentStiffness([interp(Z, stiffness.K0), interp(Z, stiffness.K1), interp(Z, stiffness.K2), interp(Z, stiffness.K3)]) : stiffness;
     stiffness_aux = phi2 != 0 ? SVector{4}([interp(Z, stiffness.K0), interp(Z, stiffness.K1), interp(Z, stiffness.K2), interp(Z, stiffness.K3)]) : 
                                 SVector{4, Float64}([stiffness.K0, stiffness.K1, stiffness.K2, stiffness.K3]);
     auxProp = AuxiliaryProperties(ρlin0, ρlin0Int, stiffness_aux)
     AFilament{phi2 != 0 ? 1 : 0, length(rings), typeof(auxProp).parameters[1]}(Z = Z, L = L, rings = rings, innerTube = innerTube, ρvol = ρvol, phi2 = phi2, auxiliary = auxProp);
 end
 
-function AFilament(N, L, rings::Vector{Ring{T}} where T<:AbstractVector, innerTube, ρvol; phi2 = 0)
+function AFilament(rings::Vector{Ring{T}} where T<:AbstractVector; 
+                    N::Integer = 32, L::Float64 = 1.0, phi2 = 0.0, ρvol = 1000.0, 
+                    innerTube::InnerTube = InnerTube(rings0[1].mechanicalProperties, Geometry(R1 = 0.0, R2 = rings0[1].geometry.R1, phi2 = phi2)),
+                    interp::Function = cubic_spline_interpolation)
     Z = LinRange(0.0, L, N);
     @variables Zs;
 
@@ -339,10 +344,67 @@ function AFilament(N, L, rings::Vector{Ring{T}} where T<:AbstractVector, innerTu
     end
 
     stiffness = FilamentStiffness(computeK(rings, innerTube))
-    # stiffness_aux = phi2 != 0 ? FilamentStiffness([interp(Z, stiffness.K0), interp(Z, stiffness.K1), interp(Z, stiffness.K2), interp(Z, stiffness.K3)]) : stiffness;
     stiffness_aux = phi2 != 0 ? SVector{4}([interp(Z, stiffness.K0), interp(Z, stiffness.K1), interp(Z, stiffness.K2), interp(Z, stiffness.K3)]) : 
                                 SVector{4, Float64}([stiffness.K0, stiffness.K1, stiffness.K2, stiffness.K3]);
     auxProp = AuxiliaryProperties(ρlin0, ρlin0Int, stiffness_aux)
     AFilament{phi2 != 0 ? 1 : 0, length(rings), typeof(auxProp).parameters[1]}(Z = Z, L = L, rings = rings, innerTube = innerTube, ρvol = ρvol, phi2 = phi2, auxiliary = auxProp);
 end
+
+# function AFilament(N, L, rings0::Vector{Ring{T}} where T<:AbstractFloat, innerTube, ρvol; phi2 = 0, interp = cubic_spline_interpolation)
+#     Z = LinRange(0.0, L, N)
+#     @variables Zs;
+
+#     R0 = rings0[end].geometry.R2;
+#     if (phi2 != 0)
+#         f = 1 .- Z / R0 * tan(phi2);
+#         M = length(rings0);
+#         phi2_rings = Vector{Float64}(undef, M);
+#         rings = Vector{Ring{typeof(Z)}}(undef, M);
+#         for i in 1:M
+#             phi2_ring = atan(rings0[i].geometry.R2 / R0 * tan(phi2));
+#             rings[i] = Ring(rings0[i].mechanicalProperties, 
+#                 Geometry(rings0[i].geometry.R1 * f, rings0[i].geometry.R2 * f; phi2 = phi2_ring), 
+#                 rings0[i].fiberArchitecture);
+#             phi2_rings[i] = phi2_ring;
+#         end
+#         innerTube = InnerTube(innerTube.mechanicalProperties, Geometry(LinRange(0.0, 0.0, N), rings[1].geometry.R1; phi2 = atan(rings0[1].geometry.R1 / R0 * tan(phi2))))
+        
+#         R0 = rings[end].geometry.R2;
+#         ρlin0 = eval(build_function(simplify(pi * ρvol * (R0[1] - Zs * tan(phi2))^2), Zs));
+#         ρlin0Int = eval(build_function(simplify(pi / (3.0 * L^2) * ρvol * ((L - Zs)^3 * R0[1]^2 + (L - Zs)^2 * (L + 2 * Zs) * R0[1] * R0[end] + (L^3 - Zs^3) * R0[end]^2)), Zs))
+#     else
+#         rings = rings0;
+
+#         ρlin0 = pi * ρvol * R0^2;
+#         ρlin0Int = eval(build_function(ρlin0 * (L - Zs), Zs));
+#     end
+
+#     stiffness = FilamentStiffness(computeK(rings, innerTube))
+#     # stiffness_aux = phi2 != 0 ? FilamentStiffness([interp(Z, stiffness.K0), interp(Z, stiffness.K1), interp(Z, stiffness.K2), interp(Z, stiffness.K3)]) : stiffness;
+#     stiffness_aux = phi2 != 0 ? SVector{4}([interp(Z, stiffness.K0), interp(Z, stiffness.K1), interp(Z, stiffness.K2), interp(Z, stiffness.K3)]) : 
+#                                 SVector{4, Float64}([stiffness.K0, stiffness.K1, stiffness.K2, stiffness.K3]);
+#     auxProp = AuxiliaryProperties(ρlin0, ρlin0Int, stiffness_aux)
+#     AFilament{phi2 != 0 ? 1 : 0, length(rings), typeof(auxProp).parameters[1]}(Z = Z, L = L, rings = rings, innerTube = innerTube, ρvol = ρvol, phi2 = phi2, auxiliary = auxProp);
+# end
+
+# function AFilament(N, L, rings::Vector{Ring{T}} where T<:AbstractVector, innerTube, ρvol; phi2 = 0)
+#     Z = LinRange(0.0, L, N);
+#     @variables Zs;
+
+#     R0 = rings0[end].geometry.R2;
+#     if (phi2 != 0)
+#         ρlin0 = eval(build_function(simplify(pi * ρvol * (R0[1] - Zs * tan(phi2))^2), Zs));
+#         ρlin0Int = eval(build_function(simplify(pi / (3.0 * L^2) * ρvol * ((L - Zs)^3 * R0[1]^2 + (L - Zs)^2 * (L + 2 * Zs) * R0[1] * R0[end] + (L^3 - Zs^3) * R0[end]^2)), Zs))
+#     else
+#         ρlin0 = pi * ρvol * R0[1]^2;
+#         ρlin0Int = eval(build_function(ρlin0 * (L - Zs), Zs));
+#     end
+
+#     stiffness = FilamentStiffness(computeK(rings, innerTube))
+#     # stiffness_aux = phi2 != 0 ? FilamentStiffness([interp(Z, stiffness.K0), interp(Z, stiffness.K1), interp(Z, stiffness.K2), interp(Z, stiffness.K3)]) : stiffness;
+#     stiffness_aux = phi2 != 0 ? SVector{4}([interp(Z, stiffness.K0), interp(Z, stiffness.K1), interp(Z, stiffness.K2), interp(Z, stiffness.K3)]) : 
+#                                 SVector{4, Float64}([stiffness.K0, stiffness.K1, stiffness.K2, stiffness.K3]);
+#     auxProp = AuxiliaryProperties(ρlin0, ρlin0Int, stiffness_aux)
+#     AFilament{phi2 != 0 ? 1 : 0, length(rings), typeof(auxProp).parameters[1]}(Z = Z, L = L, rings = rings, innerTube = innerTube, ρvol = ρvol, phi2 = phi2, auxiliary = auxProp);
+# end
 #endregion ===========================

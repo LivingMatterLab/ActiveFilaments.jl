@@ -4,7 +4,7 @@ function solveIntrinsic(filament::AFilament, activation::Vector{ActivationFourie
     prefactors = computePropertyPrefactors(filament);
     precomputedQuantities = convertUQuantToStatic(filament, computeUQuantities(filament, activation, prefactors; kwargs...));
     prob = ODEProblem(intrinsicConfDESA, u0, Zspan, precomputedQuantities);
-    # test = modelingtoolkitize(prob);
+    
     sol = solve(prob, AutoVern7(Rodas4()), dt = filament.L / 100.0, abstol = 1e-12, reltol = 1e-12);
     sol
 end
