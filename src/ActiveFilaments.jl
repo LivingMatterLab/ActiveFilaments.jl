@@ -65,7 +65,7 @@ export
     computeUQuantities,
     computeUHatSA,
     generatePrecomputedQuantitiesSA,
-    convertUQuantToStatic
+    convertUQuantToStatic,
 
     selfWeightSolve,
     selfWeightSolveSym,
@@ -96,9 +96,9 @@ include("analysis/analysis.jl");
 include("inverse_problems/inverse.jl")
 include("legacy/legacy.jl") # Legacy (comment out if unnecessary): needed for some legacy data imports
 
-include("plots/Plots.jl")
-using .Plots
-export 
-    plotReachabilityCloudRGB
+# include("plots/Plots.jl")
+# using .Plots
+# export 
+#     plotReachabilityCloudRGB
 
 end
