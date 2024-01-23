@@ -284,9 +284,13 @@ $(TYPEDFIELDS)
 end
 
 # Outer constructors
-function AFilament(rings::Vector{Ring{T}} where T<:AbstractFloat; L::Float64 = 1.0, ρvol::Float64 = 1000.0)
-    return AFilament{0, 1, Nothing}(L = L, rings = rings, ρvol = ρvol)
-end
+# function AFilament(rings::Vector{Ring{T}} where T<:AbstractFloat; L::Float64 = 1.0, ρvol::Float64 = 1000.0)
+#     return AFilament{0, 1, Nothing}(L = L, rings = rings, ρvol = ρvol)
+# end
+
+# function AFilament(rings::Vector{Ring{T}} where T<:AbstractFloat; L::Float64 = 1.0, ρvol::Float64 = 1000.0, kwargs...)
+#     return isempty(kwargs) ? AFilament{0, 1, Nothing}(L = L, rings = rings, ρvol = ρvol) : AFilament(rings; L = L, ρvol = ρvol, kwargs...)
+# end
 
 function AFilament(rings0::Vector{Ring{T}} where T<:AbstractFloat; 
                     N::Integer = 32, L::Float64 = 1.0, phi2::Float64 = 0.0, ρvol::Float64 = 1000.0,
