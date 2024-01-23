@@ -8,14 +8,14 @@ function convertUQuantToStatic_GPU(filament::AFilament, p::PrecomputedQuantities
     SMatrix{M, 6}(A)
 end
 
-function convertUQuantToStatic(filament::AFilament{1, M} where M, p::PrecomputedQuantities{Interpolations.Extrapolation})
+function convertUQuantToStatic(filament::AFilament{1, M} where M, p::PrecomputedQuantities{Float64, Interpolations.Extrapolation})
     # M = length(filament.rings);
     M = typeof(filament).parameters[2];
     Tuple([(p.uPrefactors[j].pre_ζ, p.uPrefactors[j].pre_u1, p.uPrefactors[j].pre_u2, p.uPrefactors[j].pre_u3,
             p.ϕ[j], p.argTerms[j]) for j in 1:M])                    
 end
 
-function convertUQuantToStatic(filament::AFilament{0, M} where M, p::PrecomputedQuantities{Float64})
+function convertUQuantToStatic(filament::AFilament{0, M} where M, p::PrecomputedQuantities{Float64, Float64})
     # M = length(filament.rings);
     M = typeof(filament).parameters[2];
     A = MMatrix{M, 6, Float64}(zeros(M, 6));
