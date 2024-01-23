@@ -186,7 +186,7 @@ end
 # Testing...
 function generatePrecomputedQuantitiesSA(filament::AFilament{1, M, A} where {M, A}, activationsFourier::Vector{Vector{ActivationFourier}}, prefactors::Vector{Prefactors}, n::Int)
     M = typeof(filament).parameters[2];
-    p_all = Array{PrecomputedQuantities{Float64, Interpolations.Extrapolation}}(undef, n)
+    p_all = Vector{PrecomputedQuantities{Float64, Interpolations.Extrapolation}}(undef, n)
     # println("Started p_all")
     Threads.@threads for i in eachindex(activationsFourier)
         p_all[i] = computeUQuantities(filament, activationsFourier[i], prefactors);
