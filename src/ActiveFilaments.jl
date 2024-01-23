@@ -62,8 +62,10 @@ export
 
     piecewiseGammaToFourier,
     computePropertyPrefactors,
-    computeUQuantities2,
-    computeUHat2,
+    computeUQuantities,
+    computeUHatSA,
+    generatePrecomputedQuantitiesSA,
+    convertUQuantToStatic
 
     selfWeightSolve,
     selfWeightSolveSym,
