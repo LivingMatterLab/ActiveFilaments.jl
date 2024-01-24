@@ -96,9 +96,9 @@ include("analysis/analysis.jl");
 include("inverse_problems/inverse.jl")
 include("legacy/legacy.jl") # Legacy (comment out if unnecessary): needed for some legacy data imports
 
-# include("plots/Plots.jl")
-# using .Plots
-# export 
-#     plotReachabilityCloudRGB
+# Plotting functionality: loaded only if `using GLMakie` is called
+include("plotting/plotting.jl")
+
+export plotReachabilityCloudRGB
 
 end

@@ -4,8 +4,7 @@ using ColorSchemes
 using CairoMakie
 using GLMakie
 
-export 
-    plotReachabilityCloudRGB
+import ActiveFilaments: plotReachabilityCloudRGB
 
 function plotReachabilityCloudRGB(sols, activationsGamma::Matrix{Float64}, gammaBounds, axesLimits; 
     gravity = false, full_solution = false, flipped = false, showBox = true, hideAll = false, 
