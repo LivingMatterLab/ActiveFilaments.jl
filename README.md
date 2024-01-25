@@ -10,7 +10,7 @@ Run the following command in Julia 1.10.0+:
 ```
 ] add https://github.com/LivingMatterLab/ActiveFilaments.git
 ```
-Wait for all dependencies to precompile. Slowdowns are possible in parallelized BVP solutions if Julia version 1.9.0 or older is used.
+Wait for all dependencies to precompile. Slowdowns are possible during precompilation in parallelized BVP solutions if Julia version 1.9.0 or older is used.
 
 # Example usage
 In the simplest case of uniform material properties and a single fiber ring, we can define an active filament by running
