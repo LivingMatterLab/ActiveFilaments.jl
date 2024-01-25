@@ -280,7 +280,7 @@ $(TYPEDFIELDS)
     "Total mass (if tapered, assumes linear tapering)"
     m::Float64 = tapered ? ρvol * pi / 3.0 * L * (R0[1]^2 + R0[1] * R0[end] + R0[end]^2) : ρvol * pi * R0.^2 * L
     "Auxiliary properties" # Double check if the Union here doesn't slow anything down!
-    auxiliary::Union{A, AuxiliaryProperties{A}} = nothing
+    auxiliary::AuxiliaryProperties{A}
 end
 
 # Outer constructors
@@ -315,13 +315,18 @@ function AFilament(rings0::Vector{Ring{T}} where T<:AbstractFloat;
         innerTube = InnerTube(innerTube.mechanicalProperties, Geometry(LinRange(0.0, 0.0, N), rings[1].geometry.R1; phi2 = atan(rings0[1].geometry.R1 / R0 * tan(phi2))))
         
         R0 = rings[end].geometry.R2;
-        ρlin0 = eval(build_function(simplify(pi * ρvol * (R0[1] - Zs * tan(phi2))^2), Zs));
-        ρlin0Int = eval(build_function(simplify(pi / (3.0 * L^2) * ρvol * ((L - Zs)^3 * R0[1]^2 + (L - Zs)^2 * (L + 2 * Zs) * R0[1] * R0[end] + (L^3 - Zs^3) * R0[end]^2)), Zs))
+
+        # expression = Val{false} prevents worldage issues when exporting with JLD2 (no "expression = Val{false}" causes the runtime generated function to not be
+        # save properly in JLD2). BUT it's possible that this needs to be changed in some cases
+        ρlin0 = eval(build_function(simplify(pi * ρvol * (R0[1] - Zs * tan(phi2))^2), Zs, expression = Val{false}));
+        ρlin0Int = eval(build_function(simplify(pi / (3.0 * L^2) * ρvol * ((L - Zs)^3 * R0[1]^2 + (L - Zs)^2 * (L + 2 * Zs) * R0[1] * R0[end] + (L^3 - Zs^3) * R0[end]^2)), Zs, expression = Val{false}))
     else
         rings = rings0;
 
         ρlin0 = pi * ρvol * R0^2;
-        ρlin0Int = eval(build_function(ρlin0 * (L - Zs), Zs));
+
+        # see other comment about worldage
+        ρlin0Int = eval(build_function(ρlin0 * (L - Zs), Zs, expression = Val{false}));
     end
 
     stiffness = FilamentStiffness(computeK(rings, innerTube))
@@ -340,11 +345,13 @@ function AFilament(rings::Vector{Ring{T}} where T<:AbstractVector;
 
     R0 = rings0[end].geometry.R2;
     if (phi2 != 0)
-        ρlin0 = eval(build_function(simplify(pi * ρvol * (R0[1] - Zs * tan(phi2))^2), Zs));
-        ρlin0Int = eval(build_function(simplify(pi / (3.0 * L^2) * ρvol * ((L - Zs)^3 * R0[1]^2 + (L - Zs)^2 * (L + 2 * Zs) * R0[1] * R0[end] + (L^3 - Zs^3) * R0[end]^2)), Zs))
+        # see other comment about worldage
+        ρlin0 = eval(build_function(simplify(pi * ρvol * (R0[1] - Zs * tan(phi2))^2), Zs, expression = Val{false}));
+        ρlin0Int = eval(build_function(simplify(pi / (3.0 * L^2) * ρvol * ((L - Zs)^3 * R0[1]^2 + (L - Zs)^2 * (L + 2 * Zs) * R0[1] * R0[end] + (L^3 - Zs^3) * R0[end]^2)), Zs, expression = Val{false}))
     else
+        # see other comment about worldage
         ρlin0 = pi * ρvol * R0[1]^2;
-        ρlin0Int = eval(build_function(ρlin0 * (L - Zs), Zs));
+        ρlin0Int = eval(build_function(ρlin0 * (L - Zs), Zs, expression = Val{false}));
     end
 
     stiffness = FilamentStiffness(computeK(rings, innerTube))
