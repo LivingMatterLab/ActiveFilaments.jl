@@ -53,6 +53,7 @@ export
     Geometry,
     FiberArchitecture,
     Ring,
+    AuxiliaryProperties,
     AFilament,
     InnerTube,
     FilamentStiffness,
@@ -85,7 +86,13 @@ export
     r,
     d1,
     d2,
-    d3
+    d3,
+
+    plotReachabilityCloudRGB,
+    plotReachabilityCloud,
+    plotReachabilityCloudRGBSlice,
+    plotReachabilityCloudSlice,
+    plotFilamentCollapsedRings!
 
 # Main scripts
 include("types/types.jl");
@@ -96,9 +103,8 @@ include("analysis/analysis.jl");
 include("inverse_problems/inverse.jl")
 include("legacy/legacy.jl") # Legacy (comment out if unnecessary): needed for some legacy data imports
 
-# Plotting functionality: loaded only if `using GLMakie` is called
+# Plotting functionality
 include("plotting/plotting.jl")
-
-export plotReachabilityCloudRGB
+    
 
 end
