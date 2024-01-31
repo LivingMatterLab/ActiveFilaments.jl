@@ -1,3 +1,4 @@
+### This is WIP
 function flattenActivation(activations::AbstractArray{<:AbstractActivation}; static = false)
     n_act = [activation.N for activation in activations];
     n_act_total = sum(n_act);
