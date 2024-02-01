@@ -62,9 +62,8 @@ to a BVP solution. Typically, as little as 4 steps might be sufficient.
 function selfWeightSolveSym(filament::AFilament{T, M, A} where {T, M, A}, activation::Vector{ActivationFourier{T}} where T, m0::Vector{Float64}, uInit::Vector{Float64}, g_range::StepRangeLen; kwargs...)
     prefactors = computePropertyPrefactorsSym(filament);
     precomputedQuantities = computeUQuantitiesSym(filament, activation, prefactors);
-    # u = computeUHat2(precomputedQuantities);
+    
     u_f::NTuple{4, Union{PiecewiseStructure, Function}} = buildUFunctions(filament, precomputedQuantities; kwargs...);
-    # arcLength = evaluate_integral_AD(u_f[5], 0.0, filament.L);
     m10::Float64, m20::Float64, m30::Float64 = m0;
     sol = 0;
     Zspan = (0.0, filament.L);

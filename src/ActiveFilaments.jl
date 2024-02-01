@@ -64,7 +64,7 @@ export
     piecewiseGammaToFourier,
     computePropertyPrefactors,
     computeUQuantities,
-    computeUHatSA,
+    computeUHat,
     generatePrecomputedQuantitiesSA,
     convertUQuantToStatic,
 

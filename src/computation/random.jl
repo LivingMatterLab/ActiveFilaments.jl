@@ -24,8 +24,6 @@ end
 Copies the `ActivationPiecewiseGamma` `struct`.
 """
 Base.copy(a::ActivationPiecewiseGamma) = ActivationPiecewiseGamma(a.N, a.γ, a.σ, a.θ0);
-# Base.copy(a::AbstractArray{<:AbstractActivation}) = [copy(activation) for activation in a];
-
 
 function generateRandomActivations(activationGamma::ActivationPiecewiseGamma, a::Float32, b::Float32, M::Int, n::Int)
     activationsFourier = Vector{Vector{ActivationFourier}}();

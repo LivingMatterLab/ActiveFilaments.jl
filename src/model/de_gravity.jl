@@ -9,8 +9,9 @@ under gravity for non-symbolic computations.
 
 The parameter `p` has the following structure:
 -   `p[1]` = `g::Float64` = gravitational acceleration
--   `p[2]` = `filament::AFilament`
--   `p[3]` = `precomputedQuantities::SMatrix` = precomputed quantities matrix
+-   `p[2]` = `ρlinInt::Function` = linear density integral function
+-   `p[3]` = `SVector{4, Float64}` = stiffness vector
+-   `p[4]` = `precomputedQuantities::SMatrix` = precomputed quantities matrix
 
 The unknown function u has the following structure:
 `(u[1], u[2], u[3])` = r = filament centerline along `Z`
@@ -24,18 +25,8 @@ The unknown function u has the following structure:
 `(u[13], u[14], u[15])` = moments along `Z`
 """
 function selfWeightDE!(du, u, p::Tuple{Float64, Function, SVector{4, Float64}, <:AbstractMatrix}, Z)
-    # p[1] = g
-    # p[2] = filament
-    # p[3] = precomputed quantities (converted to static array)
-    # ζ_hat, u1_hat, u2_hat, u3_hat = computeUHatSA(Z, p[3]);
-    ζ_hat, u1_hat, u2_hat, u3_hat = computeUHatSA(Z, p[4]);
-    # filament = p[2];
+    ζ_hat, u1_hat, u2_hat, u3_hat = computeUHat(Z, p[4]);
 
-    # ρlinInt1 = (filament.m / p[4]) * ζ_hat * (filament.L - Z); # Assuming constant ζ_hat (which is the case for no variation in Z)
-
-    # NEWEST. Actually, for constant extensions, this is the same as the first one, but this is correct generally for homogeneous volumetric density, non-tapered conf. See correction of SM.
-    # ρlinInt = filament.m / filament.L * (filament.L - Z); 
-    # ρlinInt = filament.auxiliary.ρlin0Int(Z);
     ρlinInt = p[2](Z);
     
     n1 = -p[1] * ρlinInt * u[6];
@@ -67,7 +58,7 @@ end
 
 # Tapered
 function selfWeightDE!(du, u, p::Tuple{Float64, Function, SVector{4, <:AbstractInterpolation}, Tuple}, Z)
-    ζ_hat, u1_hat, u2_hat, u3_hat = computeUHatSA(Z, p[4]);
+    ζ_hat, u1_hat, u2_hat, u3_hat = computeUHat(Z, p[4]);
     ρlinInt = p[2](Z);
     
     n1 = -p[1] * ρlinInt * u[6];
@@ -126,9 +117,6 @@ function selfWeightDESym!(du, u, p, Z)
     u_f = p[3];
     ζ_hat, u1_hat, u2_hat, u3_hat = [u_f[1](Z), u_f[2](Z), u_f[3](Z), u_f[4](Z)];
     filament = p[2];
-
-    # ρlinInt = (filament.m / p[4]) * evaluate_integral_AD(u_f[5], Z, filament.L);
-    # ρlinInt = ζ_hat * (filament.ρvol * pi * filament.R0^2) * (filament.L - Z); # Assuming constant ζ_hat
 
     # NOTE 1: For constant zetaHat, this is the same as the old version
     # NOTE 2: SEE TestingDiff.nb in Mathematica. For piecewise constant helical angle (hence, piecewise constant zetaHat), the old version
