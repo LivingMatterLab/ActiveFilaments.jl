@@ -272,13 +272,17 @@ function ActiveFilaments.plotReachabilityCloudSlice(sols, activationsGamma::Matr
     z = getindex.(points, 3) * (flipped ? -1 : 1);
 
     cropMap = ((fy * y - tana * x .<= t / 2) .& (fy * y - tana * x .>= -t / 2));
-    xCrop = x .* cropMap;
-    yCrop = y .* cropMap;
-    zCrop = z .* cropMap;
+    # xCrop = x .* cropMap;
+    # yCrop = y .* cropMap;
+    # zCrop = z .* cropMap;
+
+    xCrop = x[cropMap];
+    yCrop = y[cropMap];
+    zCrop = z[cropMap];
     
-    x = getindex.(points, 1) * (flipped ? -1 : 1);
-    y = getindex.(points, 2);
-    z = getindex.(points, 3) * (flipped ? -1 : 1);
+    # x = getindex.(points, 1) * (flipped ? -1 : 1);
+    # y = getindex.(points, 2);
+    # z = getindex.(points, 3) * (flipped ? -1 : 1);
 
     activations = [abs.(activationsGamma[:, i]) for i in axes(activationsGamma, 2)];
 
@@ -294,7 +298,7 @@ function ActiveFilaments.plotReachabilityCloudSlice(sols, activationsGamma::Matr
     ax = Axis3(fig[1, 1], aspect = :data, azimuth = angle - pi/2, elevation = 0; kwargs...)
     GLMakie.scatter!(xCrop, yCrop, zCrop, 
         markersize = markersize, 
-        color = activations[activationIndex], 
+        color = activations[activationIndex][cropMap], 
         colormap = (colormap, opacity),
         transparency = transparency,
         perspectiveness = 0.0)
