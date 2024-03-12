@@ -24,7 +24,7 @@ The unknown function u has the following structure:
 
 `(u[13], u[14], u[15])` = moments along `Z`
 """
-function selfWeightDE!(du, u, p::Tuple{Float64, Function, SVector{4, Float64}, <:AbstractMatrix}, Z)
+function selfWeightDE!(du, u, p::Tuple{Float64, Function, SVector{4, Float64}, <:AbstractMatrix, SVector{12, Float64}}, Z)
     ζ_hat, u1_hat, u2_hat, u3_hat = computeUHat(Z, p[4]);
 
     ρlinInt = p[2](Z);
@@ -280,19 +280,38 @@ The residuals to be satisifed are:
 -   `d3(0)` = (0, 0, 1)
 -   `m(L)`  = (0, 0, 0)
 """
+# function selfWeightBC!(residual, u, p, t)
+#     residual[1] = u[1][1] - 0.0;
+#     residual[2] = u[1][2] - 0.0;
+#     residual[3] = u[1][3] - 0.0;
+#     residual[4] = u[1][4] - 1.0;
+#     residual[5] = u[1][5] - 0.0;
+#     residual[6] = u[1][6] - 0.0;
+#     residual[7] = u[1][7] - 0.0;
+#     residual[8] = u[1][8] - 1.0;
+#     residual[9] = u[1][9] - 0.0;
+#     residual[10] = u[1][10] - 0.0;
+#     residual[11] = u[1][11] - 0.0;
+#     residual[12] = u[1][12] - 1.0;
+#     residual[13] = u[end][13] - 0.0;
+#     residual[14] = u[end][14] - 0.0;
+#     residual[15] = u[end][15] - 0.0;
+# end
+
 function selfWeightBC!(residual, u, p, t)
-    residual[1] = u[1][1] - 0.0;
-    residual[2] = u[1][2] - 0.0;
-    residual[3] = u[1][3] - 0.0;
-    residual[4] = u[1][4] - 1.0;
-    residual[5] = u[1][5] - 0.0;
-    residual[6] = u[1][6] - 0.0;
-    residual[7] = u[1][7] - 0.0;
-    residual[8] = u[1][8] - 1.0;
-    residual[9] = u[1][9] - 0.0;
-    residual[10] = u[1][10] - 0.0;
-    residual[11] = u[1][11] - 0.0;
-    residual[12] = u[1][12] - 1.0;
+    bc = p[5];
+    residual[1] = u[1][1] - bc[1];
+    residual[2] = u[1][2] - bc[2];
+    residual[3] = u[1][3] - bc[3];
+    residual[4] = u[1][4] - bc[4];
+    residual[5] = u[1][5] - bc[5];
+    residual[6] = u[1][6] - bc[6];
+    residual[7] = u[1][7] - bc[7];
+    residual[8] = u[1][8] - bc[8];
+    residual[9] = u[1][9] - bc[9];
+    residual[10] = u[1][10] - bc[10];
+    residual[11] = u[1][11] - bc[11];
+    residual[12] = u[1][12] - bc[12];
     residual[13] = u[end][13] - 0.0;
     residual[14] = u[end][14] - 0.0;
     residual[15] = u[end][15] - 0.0;
