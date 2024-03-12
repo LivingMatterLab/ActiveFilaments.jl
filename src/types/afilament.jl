@@ -214,7 +214,7 @@ $(TYPEDFIELDS)
 """
 struct AuxiliaryProperties{A}
     ρlin0::Union{Function, Float64}
-    ρlin0Int::Function
+    ρlin0Int::Union{Expr, Function}
     stiffness::SVector{4, A}
 end
 
@@ -302,7 +302,8 @@ Two versions: either provide rings0 with R10, R20 as numbers, rings with R1 and 
 function AFilament(rings0::Vector{Ring{T}} where T<:AbstractFloat; 
                     N::Integer = 32, L::Float64 = 1.0, phi2::Float64 = 0.0, ρvol::Float64 = 1000.0,
                     innerTube::InnerTube = InnerTube(rings0[1].mechanicalProperties, Geometry(R1 = 0.0, R2 = rings0[1].geometry.R1, phi2 = phi2)),
-                    interp::Function = cubic_spline_interpolation)
+                    interp::Function = cubic_spline_interpolation,
+                    expression = Val{false})
     Z = LinRange(0.0, L, N)
     @variables Zs;
 
@@ -325,15 +326,17 @@ function AFilament(rings0::Vector{Ring{T}} where T<:AbstractFloat;
 
         # expression = Val{false} prevents worldage issues when exporting with JLD2 (no "expression = Val{false}" causes the runtime generated function to not be
         # save properly in JLD2). BUT it's possible that this needs to be changed in some cases
-        ρlin0 = eval(build_function(simplify(pi * ρvol * (R0[1] - Zs * tan(phi2))^2), Zs, expression = Val{false}));
-        ρlin0Int = eval(build_function(simplify(pi / (3.0 * L^2) * ρvol * ((L - Zs)^3 * R0[1]^2 + (L - Zs)^2 * (L + 2 * Zs) * R0[1] * R0[end] + (L^3 - Zs^3) * R0[end]^2)), Zs, expression = Val{false}))
+        ρlin0 = eval(build_function(simplify(pi * ρvol * (R0[1] - Zs * tan(phi2))^2), Zs, expression = expression));
+        ρlin0Int = eval(build_function(simplify(pi / (3.0 * L^2) * ρvol * ((L - Zs)^3 * R0[1]^2 + (L - Zs)^2 * (L + 2 * Zs) * R0[1] * R0[end] + (L^3 - Zs^3) * R0[end]^2)), Zs, expression = expression))
     else
         rings = rings0;
 
         ρlin0 = pi * ρvol * R0^2;
 
         # see other comment about worldage
-        ρlin0Int = eval(build_function(ρlin0 * (L - Zs), Zs, expression = Val{false}));
+        ρlin0Int = eval(build_function(ρlin0 * (L - Zs), Zs, expression = expression));
+
+        # ρlin0Int = build_function(ρlin0 * (L - Zs), Zs, expression = expression);
     end
 
     stiffness = FilamentStiffness(computeK(rings, innerTube))
