@@ -16,28 +16,29 @@ The gravitational acceleration stepping is necessary to ensure robust convergenc
 to a BVP solution. Typically, as little as 4 steps might be sufficient.
 """
 function selfWeightSolve(filament::AFilament{T, M, A} where {T, M, A}, activation::Vector{ActivationPiecewiseGamma}, m0::Vector{Float64}, uInit::Vector{Float64}, g_range::StepRangeLen)
-    activationFourier = [piecewiseGammaToFourier(activation_i) for activation_i in activation];
+    activationFourier::Vector{ActivationFourier} = [piecewiseGammaToFourier(activation_i) for activation_i in activation];
     selfWeightSolve(filament, activationFourier, m0, uInit, g_range)
 end
 
-function selfWeightSolve(filament::AFilament{T, M, A} where {T, M, A}, activation::Vector{ActivationFourier{T}} where T, m0::Vector{Float64}, uInit::Vector{Float64}, g_range::StepRangeLen)
+function selfWeightSolve(filament::AFilament{T, M, A} where {T, M, A}, activation::Vector{ActivationFourier}, m0::Vector{Float64}, uInit::Vector{Float64}, g_range::StepRangeLen)
     prefactors = computePropertyPrefactors(filament);
     precomputedQuantities = convertUQuantToStatic(filament, computeUQuantities(filament, activation, prefactors));
 
     stiffness = filament.auxiliary.stiffness;
-    ρlin0Int = filament.auxiliary.ρlin0Int;
+    ρlin0Int = filament.auxiliary.rho_lin0Int;
     m10::Float64, m20::Float64, m30::Float64 = m0;
+    bcs = SVector{12, Float64}(uInit[1:12]);
     sol = 0;
     Zspan = (0.0, filament.L::Float64);
     for gi in g_range
-        p = (gi, ρlin0Int, stiffness, precomputedQuantities);
+        p = (gi, ρlin0Int, stiffness, precomputedQuantities, bcs);
         bvp = BVProblem(selfWeightDE!, selfWeightBC!, uInit, Zspan, p);
 
         sol = solve(bvp, Shooting(AutoVern7(Rodas4())), dt = filament.L / 100.0, abstol = 1e-12, reltol = 1e-12)
         # sol = solve(bvp, MIRK4(), dt = filament.L / 100.0, abstol = 1e-12, reltol = 1e-12);
 
         m10, m20, m30 = sol(0)[13:15];
-        uInit = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, m10, m20, m30];
+        uInit = [uInit[1], uInit[2], uInit[3], uInit[4], uInit[5], uInit[6], uInit[7], uInit[8], uInit[9], uInit[10], uInit[11], uInit[12], m10, m20, m30];
     end
 
     sol
