@@ -198,13 +198,17 @@ function ActiveFilaments.plotReachabilityCloudRGBSlice(sols, activationsGamma::M
     z = getindex.(points, 3) * (flipped ? -1 : 1);
 
     cropMap = ((fy * y - tana * x .<= t / 2) .& (fy * y - tana * x .>= -t / 2));
-    xCrop = x .* cropMap;
-    yCrop = y .* cropMap;
-    zCrop = z .* cropMap;
+    # xCrop = x .* cropMap;
+    # yCrop = y .* cropMap;
+    # zCrop = z .* cropMap;
+
+    xCrop = x[cropMap];
+    yCrop = y[cropMap];
+    zCrop = z[cropMap];
     
-    x = getindex.(points, 1) * (flipped ? -1 : 1);
-    y = getindex.(points, 2);
-    z = getindex.(points, 3) * (flipped ? -1 : 1);
+    # x = getindex.(points, 1) * (flipped ? -1 : 1);
+    # y = getindex.(points, 2);
+    # z = getindex.(points, 3) * (flipped ? -1 : 1);
 
     activations = [abs.(activationsGamma[i, :]) for i in axes(activationsGamma, 1)];
     
@@ -412,7 +416,7 @@ function computeFiberCap(sol, Θ2T::Function, Z, Θ, R; flipped = false)
     return [x, y, z];
 end
 
-plotConfigurationTube!(filament::AFilament, sol; R_outer = filament.R0, flipped = false, n = 100, color = :black, opacity = 1.0) = 
+plotConfigurationTube!(filament::AFilament, sol; R_outer = cubic_spline_interpolation(filament.Z, filament.R0), flipped = false, n = 100, color = :black, opacity = 1.0) = 
     plotConfigurationTube!(Val(filament.tapered), filament, sol; R_outer = R_outer, flipped = flipped, n = n, color = color, opacity = opacity)
 
 function plotConfigurationTube!(::Val{true}, filament, sol; R_outer = filament.R0, flipped = false, n = 100, color = :black, opacity = 1.0)
@@ -478,14 +482,14 @@ function plotConfigurationTubesSelfWeight!(filament, activation_structure, activ
     end
 end
 
-function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{1}, activation_structure, sol; n = 100, flipped = false, opacity = 1.0, standard_core = true, perturb_deviation = 0.0, colors = [:yellow, :orange, :blue])
+function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{1}, activation_structure, sol; n = 100, flipped = false, opacity_core = 1.0, opacity_fibers = 1.0, standard_core = true, perturb_deviation = 0.0, colors = [:yellow, :orange, :blue])
     #Z = range(0, filament.L, n)
     Θ = range(0, 2 * pi, n) # Flip sign to flip normals
 
     Z = filament.Z;
     R_outer = standard_core ? cubic_spline_interpolation(Z, filament.rings[1].geometry.R2) : cubic_spline_interpolation(Z, filament.rings[1].geometry.R1);
     
-    plotConfigurationTube!(filament, sol, R_outer = R_outer, flipped = flipped, n = n, color = :black, opacity = opacity);
+    plotConfigurationTube!(filament, sol, R_outer = R_outer, flipped = flipped, n = n, color = :black, opacity = opacity_core);
     
     Z = range(0.0 - filament.L * perturb_deviation / 4.0, filament.L * (1 + perturb_deviation / 4), n);
     ZR = range(0.0 - filament.L * perturb_deviation / 4.0, filament.L * (1 + perturb_deviation / 4), length(filament.Z));
@@ -502,26 +506,26 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{1}, act
         R_range(Z) = range(R1_rp(Z), R2_rp(Z), n);
 
         x, y, z = computeFiberSurface(sol, R2_rp, Θ2T, Z, Θ; flipped = flipped)
-        GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+        GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
 
         x, y, z = computeFiberSurface(sol, R1_rp, Θ2T, Z, Θ; flipped = flipped)
-        GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+        GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
         
         x, y, z = computeFiberSide(sol, Θ[1], Θ2T, Z, R_range; flipped = flipped)
-        GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+        GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
 
         x, y, z = computeFiberSide(sol, Θ[end], Θ2T, Z, R_range; flipped = flipped)
-        GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+        GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
         
         x, y, z = computeFiberCap(sol, Θ2T, Z[1], Θ, R_range(Z[1]); flipped = flipped)
-        GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+        GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
         
         x, y, z = computeFiberCap(sol, Θ2T, Z[end], Θ, R_range(Z[end]); flipped = flipped)
-        GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+        GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
     end
 end
 
-function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0}, activation_structure, sol; n = 100, flipped = false, opacity = 1.0, standard_core = true, perturb_deviation = 0.0, colors = [:yellow, :orange, :blue])
+function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0}, activation_structure, sol; n = 100, flipped = false, opacity_core = 1.0, opacity_fibers = 1.0, standard_core = true, perturb_deviation = 0.0, colors = [:yellow, :orange, :blue])
     Z = range(0, filament.L, n)
     Θ = range(0, 2 * pi, n) # Flip sign to flip normals
     # set_theme!(background = false)
@@ -530,7 +534,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0}, act
     # R_tube = standard_core ? range(0.0, filament.rings[1].geometry.R2, n) : range(0.0, filament.rings[1].geometry.R1, n)
     R_outer = standard_core ? filament.rings[1].geometry.R2 : filament.rings[1].geometry.R1;
     
-    plotConfigurationTube!(filament, sol, R_outer = R_outer, flipped = flipped, n = n, color = :black, opacity = opacity);
+    plotConfigurationTube!(filament, sol, R_outer = R_outer, flipped = flipped, n = n, color = :black, opacity = opacity_core);
     
     α2 = filament.rings[1].fiberArchitecture.α2
     if (typeof(α2) == PiecewiseStructure)
@@ -547,22 +551,22 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0}, act
                 R_range = range(R1_r, R2_r, n);
         
                 x, y, z = computeFiberSurface(sol, R2_r, R2_r, α2_r, Zp, Θ; flipped = flipped)
-                GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+                GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
 
                 x, y, z = computeFiberSurface(sol, R1_r, R2_r, α2_r, Zp, Θ; flipped = flipped)
-                GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+                GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
                 
                 x, y, z = computeFiberSide(sol, α2_r, Θ[1], Z, R_range; flipped = flipped)
-                GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+                GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
 
                 x, y, z = computeFiberSide(sol, α2_r, Θ[end], Z, R_range; flipped = flipped)
-                GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+                GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
         
                 x, y, z = computeFiberCap(sol, α2_r, Zp[1], Θ, R_range; flipped = flipped)
-                GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+                GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
                 
                 x, y, z = computeFiberCap(sol, α2_r, Zp[end], Θ, R_range; flipped = flipped)
-                GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+                GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
             end
 
             if standard_core
@@ -599,23 +603,61 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0}, act
             R_range = range(R1_r, R2_r, n);
     
             x, y, z = computeFiberSurface(sol, R2_r, R2_r, α2_r, Z, Θ; flipped = flipped)
-            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
 
             x, y, z = computeFiberSurface(sol, R1_r, R2_r, α2_r, Z, Θ; flipped = flipped)
-            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
             
             x, y, z = computeFiberSide(sol, α2_r, Θ[1], Z, R_range; flipped = flipped)
-            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
 
             x, y, z = computeFiberSide(sol, α2_r, Θ[end], Z, R_range; flipped = flipped)
-            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
             
             x, y, z = computeFiberCap(sol, α2_r, Z[1], Θ, R_range; flipped = flipped)
-            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
             
             x, y, z = computeFiberCap(sol, α2_r, Z[end], Θ, R_range; flipped = flipped)
-            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
         end
     end
 end
+
+function ActiveFilaments.plotConfigurationTubesSelfWeight!(filament, activation_structure, activations; 
+    m0 = [0.0, 0.0, 0.0], uInit = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, m0[1], m0[2], m0[3]], g = -9.8, Ng = 4, 
+    kwargs...)
+
+    g_range = range(start = 0.0, stop = g, length = Ng);
+
+    for gamma in activations
+        activation_conf = [copy(activation) for activation in activation_structure];
+        for i in eachindex(gamma)
+            activation_conf[i].γ = gamma[i];
+        end
+
+        activationFourier_conf::Vector{ActivationFourier} = [piecewiseGammaToFourier(activation) for activation in activation_conf];
+        
+        sol_conf = selfWeightSolve(filament, activationFourier_conf, m0, uInit, g_range);
+
+        plotConfigurationTube!(filament, sol_conf; kwargs...);
+    end
+end
+
+function ActiveFilaments.plotConfigurationsSelfWeight!(filament, activation_structure, activations; m0 = [0.0, 0.0, 0.0], uInit = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, m0[1], m0[2], m0[3]], g = -9.8, Ng = 4, kwargs...)
+    g_range = range(start = 0.0, stop = g, length = Ng);
+
+    for gamma in activations
+        activation_conf = [copy(activation) for activation in activation_structure];
+        for i in eachindex(gamma)
+            activation_conf[i].γ = gamma[i];
+        end
+
+        activationFourier_conf::Vector{ActivationFourier} = [piecewiseGammaToFourier(activation) for activation in activation_conf];
+        
+        sol_conf = selfWeightSolve(filament, activationFourier_conf, m0, uInit, g_range);
+
+        plotFilamentCollapsedRings!(filament, activation_structure, sol_conf; kwargs...);
+    end
+end
+
 end
