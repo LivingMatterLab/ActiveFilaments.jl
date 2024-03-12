@@ -88,11 +88,15 @@ export
     d2,
     d3,
 
+    Trunk,
+
     plotReachabilityCloudRGB,
     plotReachabilityCloud,
     plotReachabilityCloudRGBSlice,
     plotReachabilityCloudSlice,
-    plotFilamentCollapsedRings!
+    plotFilamentCollapsedRings!,
+    plotConfigurationsSelfWeight!,
+    plotConfigurationTubesSelfWeight!
 
 # Main scripts
 include("types/types.jl");
@@ -101,6 +105,7 @@ include("computation/computation.jl");
 include("utils.jl");
 include("analysis/analysis.jl");
 include("inverse_problems/inverse.jl")
+include("trunk/types.jl")
 include("legacy/legacy.jl") # Legacy (comment out if unnecessary): needed for some legacy data imports
 
 # Plotting functionality
