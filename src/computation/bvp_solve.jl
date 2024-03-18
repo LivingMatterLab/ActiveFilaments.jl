@@ -25,7 +25,8 @@ function selfWeightSolve(filament::AFilament{T, M, A} where {T, M, A}, activatio
     precomputedQuantities = convertUQuantToStatic(filament, computeUQuantities(filament, activation, prefactors));
 
     stiffness = filament.auxiliary.stiffness;
-    ρlin0Int = filament.auxiliary.rho_lin0Int;
+    ρlin0Int = filament.auxiliary.ρlin0Int;
+    
     m10::Float64, m20::Float64, m30::Float64 = m0;
     bcs = SVector{12, Float64}(uInit[1:12]);
     sol = 0;
