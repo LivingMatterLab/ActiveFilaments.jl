@@ -87,8 +87,17 @@ export
     d1,
     d2,
     d3,
+    build_distance_function,
 
     Trunk,
+    TrunkFast,
+    ActivatedTrunkQuantities,
+    constant_activation,
+    computeH,
+    self_weight_solve,
+    build_trunk_bvp,
+    self_weight_solve_single,
+    optimize_activation,
 
     plotReachabilityCloudRGB,
     plotReachabilityCloud,
@@ -101,11 +110,11 @@ export
 # Main scripts
 include("types/types.jl");
 include("model/model.jl");
+include("trunk/trunk.jl")
 include("computation/computation.jl");
 include("utils.jl");
 include("analysis/analysis.jl");
 include("inverse_problems/inverse.jl")
-include("trunk/types.jl")
 include("legacy/legacy.jl") # Legacy (comment out if unnecessary): needed for some legacy data imports
 
 # Plotting functionality
