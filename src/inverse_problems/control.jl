@@ -92,3 +92,42 @@ function optimizeActivation(controlObjective::ConfigurationControlObjective, fil
 
     sols
 end
+
+
+function build_distance_function(
+            controlObjective::ConfigurationControlObjective, 
+            trunk::TrunkFast{T, N},
+            configurationSolver::Function, 
+            bvp::BVProblem,
+            m0::Vector{Float64} = [0.0, 0.0, 0.0], 
+            uInit::Vector{Float64} = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, m0[1], m0[2], m0[3]],
+            Zspan = (0.0, trunk.trunk.L), args...; 
+            kwargs...) where {T, N}
+
+    if (controlObjective.propertyType === r)
+        return (function f(x, p)
+                    # γ = ([x[1:5]; x[6:10]; x[11:15]], [x[16:20]; x[21:25]; x[26:30]])
+
+                    γ = (SMatrix{3, 5, Float64}(transpose(reshape(x[1:15], (5, 3)))), SMatrix{3, 5, Float64}(transpose(reshape(x[16:30], (5, 3)))))
+                    sol = configurationSolver(bvp, trunk, γ, args...)
+
+                    # Adapt for vectors
+                    sol_r = sol(controlObjective.args[1])[1:3];
+                    return sqeuclidean(sol_r, controlObjective.properties[1, :]); 
+                end)
+    else
+        # Implement
+    end
+
+
+end
+
+function optimize_activation(control_objective::ConfigurationControlObjective, trunk::TrunkFast{T, N}, bvp::BVProblem, x0::Vector{Float64} = zeros(30), args...; kwargs...) where {T, N}
+    f = build_distance_function(control_objective, trunk, self_weight_solve_single, bvp, args...)
+    
+    prob = OptimizationProblem(f, x0, nothing; kwargs...);
+
+    sol = solve(prob, NLopt.G_MLSL(), local_method = NLopt.LN_NELDERMEAD(), maxtime = 60.0) #, maxtime = 10.0
+
+    sol
+end

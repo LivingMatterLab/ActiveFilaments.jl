@@ -9,10 +9,11 @@ end
 struct TrunkInterpolations{T}
     R1::SVector{5, PiecewiseFunction{T, Interpolations.Extrapolation}}
     R2::SVector{5, PiecewiseFunction{T, Interpolations.Extrapolation}}
-    K0::PiecewiseFunction{T, Interpolations.Extrapolation}
-    K1::PiecewiseFunction{T, Interpolations.Extrapolation}
-    K2::PiecewiseFunction{T, Interpolations.Extrapolation}
-    K3::PiecewiseFunction{T, Interpolations.Extrapolation}
+    K::SVector{4, PiecewiseFunction{T, Interpolations.Extrapolation}}
+    # K0::PiecewiseFunction{T, Interpolations.Extrapolation}
+    # K1::PiecewiseFunction{T, Interpolations.Extrapolation}
+    # K2::PiecewiseFunction{T, Interpolations.Extrapolation}
+    # K3::PiecewiseFunction{T, Interpolations.Extrapolation}
 end
 
 
@@ -46,7 +47,7 @@ end
     R0::SMatrix{T, N, Float64} = 
         SMatrix{T, N, Float64}(
             reduce(vcat, [
-                R00 .- Z[i] * tan(φ0) for i in 1:T
+                transpose(R00 .- Z[i] * tan(φ0)) for i in 1:T
             ]
             )
         )
@@ -91,7 +92,7 @@ end
     architectures::SMatrix{T, 5, Architecture} = 
         SMatrix{T, 5, Architecture}(
             reduce(vcat, [
-                [longitudinal, helical, helical, radial, radial] for i in 1:T
+                [longitudinal helical helical radial radial] for i in 1:T
             ]
             )
         )
@@ -112,82 +113,169 @@ end
     
     "Trunk stiffness K0"
     K0::SMatrix{T, N, Float64} = SMatrix{T, N, Float64}(
-       reduce(vcat, [E * pi * R0[i, :] .^ 2 for i in 1:T])
+       reduce(vcat, [transpose(E * pi * R0[i, :] .^ 2) for i in 1:T])
     )
     "Trunk stiffness K1"
     K1::SMatrix{T, N, Float64} = SMatrix{T, N, Float64}(
-       reduce(vcat, [E * pi / 4.0 * R0[i, :] .^ 4 for i in 1:T])
+       reduce(vcat, [transpose(E * pi / 4.0 * R0[i, :] .^ 4) for i in 1:T])
     )
     "Trunk stiffness K2"
     K2::SMatrix{T, N, Float64} = SMatrix{T, N, Float64}(
-       reduce(vcat, [E * pi / 4.0 * R0[i, :] .^ 4 for i in 1:T])
+       reduce(vcat, [transpose(E * pi / 4.0 * R0[i, :] .^ 4) for i in 1:T])
     )
     "Trunk stiffness K3"
     K3::SMatrix{T, N, Float64} = SMatrix{T, N, Float64}(
-       reduce(vcat, [E * pi / (1.0 + ν) / 4.0 * R0[i, :] .^ 4 for i in 1:T])
+       reduce(vcat, [transpose(E * pi / (1.0 + ν) / 4.0 * R0[i, :] .^ 4) for i in 1:T])
     )
 
-    "Interpolating functions"
-    interpolations::TrunkInterpolations = TrunkInterpolations(
-        SVector{5, PiecewiseFunction{T, Interpolations.Extrapolation}}(
-            [PiecewiseFunction(
-                SVector{T, Interpolations.Extrapolation}(
-                    [cubic_spline_interpolation(Z[i], R1[i, j]) for i in 1:T]
-                ),
-                SVector{T, SVector{2, Float64}}(
-                    [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
-                )
-            )
-            for j in 1:5]
-        ),
-        SVector{5, PiecewiseFunction{T, Interpolations.Extrapolation}}(
-            [PiecewiseFunction(
-                SVector{T, Interpolations.Extrapolation}(
-                    [cubic_spline_interpolation(Z[i], R2[i, j]) for i in 1:T]
-                ),
-                SVector{T, SVector{2, Float64}}(
-                    [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
-                )
-            )
-            for j in 1:5]
-        ),
-        PiecewiseFunction(
-            SVector{T, Interpolations.Extrapolation}(
-                [cubic_spline_interpolation(Z[i], K0[i, :]) for i in 1:T]
-            ),
-            SVector{T, SVector{2, Float64}}(
-                [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
-            )
-        ),
-        PiecewiseFunction(
-            SVector{T, Interpolations.Extrapolation}(
-                [cubic_spline_interpolation(Z[i], K1[i, :]) for i in 1:T]
-            ),
-            SVector{T, SVector{2, Float64}}(
-                [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
-            )
-        ),
-        PiecewiseFunction(
-            SVector{T, Interpolations.Extrapolation}(
-                [cubic_spline_interpolation(Z[i], K2[i, :]) for i in 1:T]
-            ),
-            SVector{T, SVector{2, Float64}}(
-                [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
-            )
-        ),
-        PiecewiseFunction(
-            SVector{T, Interpolations.Extrapolation}(
-                [cubic_spline_interpolation(Z[i], K3[i, :]) for i in 1:T]
-            ),
-            SVector{T, SVector{2, Float64}}(
-                [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
-            )
-        )
-    )
+    # "Precomputed quantities"
+    # p::SVector{7, SVector{3, SMatrix{T, N, Float64}}} = compute_p(trunk)
+
+    # "Interpolating functions"
+    # interpolations::TrunkInterpolations = TrunkInterpolations(
+    #     SVector{5, PiecewiseFunction{T, Interpolations.Extrapolation}}(
+    #         [PiecewiseFunction(
+    #             SVector{T, Interpolations.Extrapolation}(
+    #                 [cubic_spline_interpolation(Z[i], R1[i, j]) for i in 1:T]
+    #             ),
+    #             SVector{T, SVector{2, Float64}}(
+    #                 [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
+    #             )
+    #         )
+    #         for j in 1:5]
+    #     ),
+    #     SVector{5, PiecewiseFunction{T, Interpolations.Extrapolation}}(
+    #         [PiecewiseFunction(
+    #             SVector{T, Interpolations.Extrapolation}(
+    #                 [cubic_spline_interpolation(Z[i], R2[i, j]) for i in 1:T]
+    #             ),
+    #             SVector{T, SVector{2, Float64}}(
+    #                 [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
+    #             )
+    #         )
+    #         for j in 1:5]
+    #     ),
+    #     PiecewiseFunction(
+    #         SVector{T, Interpolations.Extrapolation}(
+    #             [cubic_spline_interpolation(Z[i], K0[i, :]) for i in 1:T]
+    #         ),
+    #         SVector{T, SVector{2, Float64}}(
+    #             [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
+    #         )
+    #     ),
+    #     PiecewiseFunction(
+    #         SVector{T, Interpolations.Extrapolation}(
+    #             [cubic_spline_interpolation(Z[i], K1[i, :]) for i in 1:T]
+    #         ),
+    #         SVector{T, SVector{2, Float64}}(
+    #             [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
+    #         )
+    #     ),
+    #     PiecewiseFunction(
+    #         SVector{T, Interpolations.Extrapolation}(
+    #             [cubic_spline_interpolation(Z[i], K2[i, :]) for i in 1:T]
+    #         ),
+    #         SVector{T, SVector{2, Float64}}(
+    #             [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
+    #         )
+    #     ),
+    #     PiecewiseFunction(
+    #         SVector{T, Interpolations.Extrapolation}(
+    #             [cubic_spline_interpolation(Z[i], K3[i, :]) for i in 1:T]
+    #         ),
+    #         SVector{T, SVector{2, Float64}}(
+    #             [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
+    #         )
+    #     )
+    # )
 
     "Volumetric density"
     ρvol::Float64
 
     "Total mass (assumes linear tapering)"
     m::Float64 = ρvol * pi / 3.0 * L * (R00^2 + R00 * R0[end, end] + R0[end, end]^2)
+end
+
+@with_kw struct TrunkFast{T, N}
+    "Main trunk definition structure"
+    trunk::Trunk{T, N}
+
+    "Precomputed quantities"
+    p::SVector{2, NTuple{5, SVector{3, SMatrix{T, N, Float64}}}} = compute_p(trunk)
+
+    "Interpolating functions"
+    interpolations::TrunkInterpolations = TrunkInterpolations(
+        SVector{5, PiecewiseFunction{T, Interpolations.Extrapolation}}(
+            [PiecewiseFunction(
+                SVector{T, Interpolations.Extrapolation}(
+                    [cubic_spline_interpolation(trunk.Z[i], trunk.R1[i, j]) for i in 1:T]
+                ),
+                SVector{T, SVector{2, Float64}}(
+                    [SVector{2, Float64}([trunk.Z1[i], trunk.Z2[i]]) for i in 1:T]
+                )
+            )
+            for j in 1:5]
+        ),
+        SVector{5, PiecewiseFunction{T, Interpolations.Extrapolation}}(
+            [PiecewiseFunction(
+                SVector{T, Interpolations.Extrapolation}(
+                    [cubic_spline_interpolation(trunk.Z[i], trunk.R2[i, j]) for i in 1:T]
+                ),
+                SVector{T, SVector{2, Float64}}(
+                    [SVector{2, Float64}([trunk.Z1[i], trunk.Z2[i]]) for i in 1:T]
+                )
+            )
+            for j in 1:5]
+        ),
+        SVector{4, PiecewiseFunction{T, Interpolations.Extrapolation}}(
+            PiecewiseFunction(
+            SVector{T, Interpolations.Extrapolation}(
+                [cubic_spline_interpolation(trunk.Z[i], trunk.K0[i, :], extrapolation_bc = Line()) for i in 1:T]
+            ),
+            SVector{T, SVector{2, Float64}}(
+                [SVector{2, Float64}([trunk.Z1[i], trunk.Z2[i]]) for i in 1:T]
+            )
+            ),
+            PiecewiseFunction(
+                SVector{T, Interpolations.Extrapolation}(
+                    [cubic_spline_interpolation(trunk.Z[i], trunk.K1[i, :], extrapolation_bc = Line()) for i in 1:T]
+                ),
+                SVector{T, SVector{2, Float64}}(
+                    [SVector{2, Float64}([trunk.Z1[i], trunk.Z2[i]]) for i in 1:T]
+                )
+            ),
+            PiecewiseFunction(
+                SVector{T, Interpolations.Extrapolation}(
+                    [cubic_spline_interpolation(trunk.Z[i], trunk.K2[i, :], extrapolation_bc = Line()) for i in 1:T]
+                ),
+                SVector{T, SVector{2, Float64}}(
+                    [SVector{2, Float64}([trunk.Z1[i], trunk.Z2[i]]) for i in 1:T]
+                )
+            ),
+            PiecewiseFunction(
+                SVector{T, Interpolations.Extrapolation}(
+                    [cubic_spline_interpolation(trunk.Z[i], trunk.K3[i, :], extrapolation_bc = Line()) for i in 1:T]
+                ),
+                SVector{T, SVector{2, Float64}}(
+                    [SVector{2, Float64}([trunk.Z1[i], trunk.Z2[i]]) for i in 1:T]
+                )
+            )
+        )
+    )
+
+    "Density integral"
+    L::Float64 = trunk.L
+    R00::Float64 = trunk.R00
+    R0_end::Float64 = trunk.R0[end, end]
+    ρlin0Int::Function = Z -> 
+        begin
+            pi / (3.0 * L^2) * trunk.ρvol * ((L - Z)^3 * R00^2 + (L - Z)^2 * (L + 2 * Z) * R00 * R0_end + (L^3 - Z^3) * R0_end^2)
+        end
+end
+
+@with_kw struct ActivatedTrunkQuantities{T, N}
+    trunkFast::TrunkFast{T, N}
+    γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}}
+    u_hat_array = compute_uhat_array(trunkFast, γ)
+    u_hat = compute_uhat_interpolations(trunkFast.trunk, u_hat_array)
 end
