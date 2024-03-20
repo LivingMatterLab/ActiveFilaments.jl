@@ -105,11 +105,15 @@ function build_distance_function(
             kwargs...) where {T, N}
 
     if (controlObjective.propertyType === r)
+        
         return (function f(x, p)
                     # γ = ([x[1:5]; x[6:10]; x[11:15]], [x[16:20]; x[21:25]; x[26:30]])
+                    X = [x[1:12]..., 0.0, x[13:26]..., 0.0, x[27], x[28]]
+                    γ = (SMatrix{3, 5, Float64}(transpose(reshape(X[1:15], (5, 3)))), SMatrix{3, 5, Float64}(transpose(reshape(X[16:30], (5, 3)))))
 
-                    γ = (SMatrix{3, 5, Float64}(transpose(reshape(x[1:15], (5, 3)))), SMatrix{3, 5, Float64}(transpose(reshape(x[16:30], (5, 3)))))
-                    sol = configurationSolver(bvp, trunk, γ, args...)
+                    # Include rotation as DOFs
+
+                    sol, _ = configurationSolver(bvp, trunk, γ, args...)
 
                     # Adapt for vectors
                     sol_r = sol(controlObjective.args[1])[1:3];
@@ -122,12 +126,42 @@ function build_distance_function(
 
 end
 
-function optimize_activation(control_objective::ConfigurationControlObjective, trunk::TrunkFast{T, N}, bvp::BVProblem, x0::Vector{Float64} = zeros(30), args...; kwargs...) where {T, N}
+function optimize_activation(control_objective::ConfigurationControlObjective, trunk::TrunkFast{T, N}, bvp::BVProblem, x0::Vector{Float64} = zeros(28), args...; uInit = nothing, maxtime = 60.0, kwargs...) where {T, N}
+    if !isnothing(uInit)
+        bvp = remake(bvp; u0 = uInit)
+    end
     f = build_distance_function(control_objective, trunk, self_weight_solve_single, bvp, args...)
-    
+
+    # g = (x, p) -> (f(x, p) + 0.25 * norm(x, 1))
+
     prob = OptimizationProblem(f, x0, nothing; kwargs...);
 
-    sol = solve(prob, NLopt.G_MLSL(), local_method = NLopt.LN_NELDERMEAD(), maxtime = 60.0) #, maxtime = 10.0
+    # sol = solve(prob, NLopt.G_MLSL(), local_method = NLopt.LN_NELDERMEAD(), maxtime = 60.0)
 
-    sol
+    # sol = solve(prob, NLopt.G_MLSL(), local_method = NLopt.LN_SBPLX(), maxtime = 30.0)
+
+    sol = solve(prob, NLopt.GN_DIRECT_L_RAND(), maxtime = maxtime)
+
+    
+    println(sol.objective)
+
+    X = [sol[1:12]..., 0.0, sol[13:26]..., 0.0, sol[27], sol[28]]
+    γ = (SMatrix{3, 5, Float64}(transpose(reshape(X[1:15], (5, 3)))), SMatrix{3, 5, Float64}(transpose(reshape(X[16:30], (5, 3)))))
+    sol, γ
+end
+
+# Adapted from Kochenderfer, M. J., & Wheeler, T. A. (2019). Algorithms for optimization. MIT Press.
+function ce_method_trunk(f, P, k_max, m = 100, m_elite = 10)
+    P_type = typeof(P)
+    for k in 1:k_max
+        samples = rand(P, m)
+        result = Vector{Float64}(undef, m)
+        Threads.@threads for i in 1:m
+            result[i] = f(samples[:, i])
+        end
+        order = sortperm(result)
+        P = fit(P_type, samples[:, order[1:m_elite]])
+    end
+
+    return P
 end

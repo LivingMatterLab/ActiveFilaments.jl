@@ -105,7 +105,10 @@ export
     plotReachabilityCloudSlice,
     plotFilamentCollapsedRings!,
     plotConfigurationsSelfWeight!,
-    plotConfigurationTubesSelfWeight!
+    plotConfigurationTubesSelfWeight!,
+
+    plot_trunk!,
+    plot_trunk_exploded!
 
 # Main scripts
 include("types/types.jl");
