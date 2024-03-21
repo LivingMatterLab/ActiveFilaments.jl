@@ -210,7 +210,11 @@ end
     radial_muscle_bending::Bool = false
 
     "Default clamping condition"
-    clamping_condition::ClampingCondition = ClampingCondition([0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0])
+    r0::SVector{3, Float64} = @SVector [0.0, 0.0, 0.0]
+    d10::SVector{3, Float64} = @SVector [1.0, 0.0, 0.0]
+    d20::SVector{3, Float64} = @SVector [0.0, 1.0, 0.0]
+    d30::SVector{3, Float64} = @SVector [0.0, 0.0, 1.0]
+    clamping_condition::ClampingCondition = ClampingCondition(r0, d10, d20, d30)
     clamping_condition_unrolled::SVector{12, Float64} = 
         [clamping_condition.r0..., clamping_condition.d10..., clamping_condition.d20..., clamping_condition.d30...]
 

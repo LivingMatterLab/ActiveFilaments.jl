@@ -98,6 +98,7 @@ export
     build_trunk_bvp,
     self_weight_solve_single,
     optimize_activation,
+    rotate_bc,
 
     plotReachabilityCloudRGB,
     plotReachabilityCloud,

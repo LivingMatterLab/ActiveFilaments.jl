@@ -26,3 +26,11 @@ struct ConfigurationControlObjective{T, P <: ConfigurationProperty} <: AbstractC
     ConfigurationControlObjective(args::SVector{T, Float64}, properties::SVector{T, Float64}, propertyType::Type{P}) where {T, P <: ScalarConfigurationProperty} = new{T, P}(args, properties, propertyType);
     ConfigurationControlObjective(args::SVector{T, Float64}, properties::SMatrix{T, 3, Float64}; propertyType::Type{P} = r) where {T, P <: Vector3ConfigurationProperty} = new{T, P}(args, properties, propertyType);
 end
+
+struct ConfigurationControlObjective{N, T, P <: SVector{N, <:ConfigurationProperty}} <: AbstractControlObjective
+    args::SVector{N, SVector{T, Float64}}
+    properties::Union{SVector{N, SVector{T, Float64}}, SVector{N, SMatrix{T, 3, Float64}}}
+    propertyTypes::SVector{N, Type{P}}
+    ConfigurationControlObjective(args::SVector{N, SVector{T, Float64}}, properties::SVector{N, SVector{T, Float64}}, propertyTypes::SVector{N, Type{P}}) where {N, T, P <: ScalarConfigurationProperty} = new{N, T, P}(args, properties, propertyTypes);
+    ConfigurationControlObjective(args::SVector{N, SVector{T, Float64}}, properties::SVector{N, SMatrix{T, 3, Float64}}; propertyTypes::SVector{N, Type{P}} = SVector{1, Vector3ConfigurationProperty}([r])) where {N, T, P <: Vector3ConfigurationProperty} = new{N, T, P}(args, properties, propertyTypes);
+end

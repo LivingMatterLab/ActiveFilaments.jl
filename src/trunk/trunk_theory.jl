@@ -438,7 +438,6 @@ function build_trunk_bvp(trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float64
         g::Float64 = -9.8, F::SVector{3, Float64} = SVector{3, Float64}([0.0, 0.0, 0.0])) where {T, N}
     activation = ActivatedTrunkQuantities{T, N}(trunkFast = trunk, γ = γ)
     
-    # stiffness = trunk.interpolations.K
     stiffness = activation.new_K
     ρlin0Int = trunk.ρlin0Int
     u_hat = activation.u_hat
@@ -455,15 +454,21 @@ end
 
 function self_weight_solve_single(bvp::BVProblem, trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}}; 
         m0::Vector{Float64} = [0.0, 0.0, 0.0], uInit::Vector{Float64} = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, m0[1], m0[2], m0[3]], 
-        solver = 1, kwargs...) where {T, N}
+        solver = 1, new_bcs = nothing, abstol = 1e-4, reltol = 1e-4, kwargs...) where {T, N}
     a = ActivatedTrunkQuantities{T, N}(trunkFast = trunk, γ = γ)
     u_hat = a.u_hat
     
-    bvp_new = remake(bvp; u0 = uInit, p = (bvp.p[1], bvp.p[2], a.new_K, u_hat, bvp.p[5], bvp.p[6]))
+    if isnothing(new_bcs)
+        bvp_new = remake(bvp; u0 = uInit, p = (bvp.p[1], bvp.p[2], a.new_K, u_hat, bvp.p[5], bvp.p[6]))
+    else
+        println("Remaking BVP bcs")
+        bvp_new = remake(bvp; u0 = uInit, p = (bvp.p[1], bvp.p[2], a.new_K, u_hat, bvp.p[5], new_bcs))
+    end
+    println(bvp_new.p[6])
 
     if solver == 1
         # sol = solve(bvp_new, MIRK4(), dt = trunk.trunk.L / 100.0, abstol = 1e-3, reltol = 1e-3);
-        sol = solve(bvp_new, MIRK4(), dt = trunk.trunk.L / 100.0, abstol = 1e-4, reltol = 1e-4);
+        sol = solve(bvp_new, MIRK4(), dt = trunk.trunk.L / 100.0, abstol = abstol, reltol = reltol);
     elseif solver == 2
         sol = solve(bvp_new, Shooting(AutoVern7(Rodas4())), dt = trunk.trunk.L / 100.0, abstol = 1e-6, reltol = 1e-6);
     end
