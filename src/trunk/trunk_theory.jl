@@ -338,17 +338,17 @@ function intrinsic_trunk_de_SA(u, p, Z)
     SVector{12}(du1, du2, du3, du4, du5, du6, du7, du8, du9, du10, du11, du12)
 end
 
-function solveIntrinsic(trunkFast::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}},
+function solveIntrinsic(trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}},
                         u0 = SVector{12, Float64}([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]), 
-                        Zspan = (0.0, trunkFast.trunk.L); 
+                        Zspan = (0.0, trunk.trunk.L); 
                         kwargs...) where {T, N}
-    activation = ActivatedTrunkQuantities{T, N}(trunkFast = trunkFast, γ = γ)
+    activation = ActivatedTrunkQuantities{T, N}(trunkFast = trunk, γ = γ)
     p = activation.u_hat
     println(typeof(p))
     
     prob = ODEProblem(intrinsic_trunk_de_SA, u0, Zspan, p);
     
-    sol = solve(prob, AutoVern7(Rodas4()), dt = trunkFast.trunk.L / 100.0, abstol = 1e-12, reltol = 1e-12);
+    sol = solve(prob, AutoVern7(Rodas4()), dt = trunk.trunk.L / 100.0, abstol = 1e-12, reltol = 1e-12);
 
     sol, activation
 end
@@ -433,6 +433,18 @@ function self_weight_solve(trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float
     sol
 end
 
+function build_trunk_ivp(trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}} = ((@SMatrix zeros(3, 5)), (@SMatrix zeros(3, 5)));
+        u0::SVector{12, Float64} = SVector{12, Float64}([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]),
+        Zspan = (0.0, trunk.trunk.L),
+        kwargs...) where {T, N}
+    activation = ActivatedTrunkQuantities{T, N}(trunkFast = trunk, γ = γ)
+    p = activation.u_hat
+    
+    ivp = ODEProblem(intrinsic_trunk_de_SA, u0, Zspan, p);
+    
+    ivp, activation
+end
+
 function build_trunk_bvp(trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}} = ((@SMatrix zeros(3, 5)), (@SMatrix zeros(3, 5)));
         bcs = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
         m0::Vector{Float64} = [0.0, 0.0, 0.0], uInit::Vector{Float64} = [bcs..., m0[1], m0[2], m0[3]],
@@ -462,6 +474,7 @@ function self_weight_solve_single(bvp::BVProblem, trunk::TrunkFast{T, N}, γ::Tu
     if isnothing(new_bcs)
         bvp_new = remake(bvp; u0 = uInit, p = (bvp.p[1], bvp.p[2], a.new_K, u_hat, bvp.p[5], bvp.p[6]))
     else
+        println("Remaking BVP bcs")
         bvp_new = remake(bvp; u0 = uInit, p = (bvp.p[1], bvp.p[2], a.new_K, u_hat, bvp.p[5], new_bcs))
     end
     println(bvp_new.p[6])
@@ -479,6 +492,25 @@ function self_weight_solve_single(bvp::BVProblem, trunk::TrunkFast{T, N}, γ::Tu
     if (abs(m_end[1]) > 0.001 || abs(m_end[2]) > 0.001 || abs(m_end[3]) > 0.001)
         println("WARNING: Non-zero end moment")
     end
+
+    sol, a
+end
+
+
+function ivp_solve_single(
+        ivp::ODEProblem, 
+        trunk::TrunkFast{T, N}, 
+        γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}};
+        new_u0 = nothing, kwargs...) where {T, N}
+    a = ActivatedTrunkQuantities{T, N}(trunkFast = trunk, γ = γ)
+
+    if isnothing(new_u0)
+        ivp_new = remake(ivp; p = a.u_hat)
+    else
+        ivp_new = remake(ivp; u0 = new_u0, p = a.u_hat)
+    end
+
+    sol = solve(ivp_new, AutoVern7(Rodas4()), dt = trunk.trunk.L / 100.0, abstol = 1e-8, reltol = 1e-6);
 
     sol, a
 end

@@ -99,6 +99,8 @@ export
     self_weight_solve_single,
     optimize_activation,
     rotate_bc,
+    build_trunk_ivp,
+    ivp_solve_single,
 
     plotReachabilityCloudRGB,
     plotReachabilityCloud,

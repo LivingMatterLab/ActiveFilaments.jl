@@ -45,16 +45,16 @@ struct u3 <: ScalarConfigurationProperty end
 #             new{T, S, Vector{S}}(args, properties, propertyTypes);
 # end
 
-struct ConfigurationControlObjective{T, P<:DataType} <: AbstractControlObjective
-    args::Vector{SVector{T, Float64}}
+struct ConfigurationControlObjective{P<:DataType} <: AbstractControlObjective
+    args::Vector{<:SArray}
     properties::Union{<:Any}
     propertyTypes::Vector{P}
-    weights::Vector{SVector{T, Float64}}
+    weights::Vector{<:SArray}
     ConfigurationControlObjective(
-        args::Vector{SVector{T, Float64}}, 
+        args::Vector{<:SArray}, 
         properties::Vector{<:Any},
-        weights::Vector{SVector{T, Float64}}; 
+        weights::Vector{<:SArray}; 
         propertyTypes::Vector{P} = Vector{DataType}([r])
-        ) where {T, P <: DataType} = 
-            new{T, P}(args, properties, propertyTypes, weights);
+        ) where {P <: DataType} = 
+            new{P}(args, properties, propertyTypes, weights);
 end

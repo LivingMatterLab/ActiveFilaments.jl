@@ -175,51 +175,58 @@ function build_distance_function(
             return out;
         end
     end
-    # if (controlObjective.propertyType === r)
-    #     if optimize_bc
-    #         println(optimize_bc)
-    #         return ((x, p) -> begin
-    #                     # γ = ([x[1:5]; x[6:10]; x[11:15]], [x[16:20]; x[21:25]; x[26:30]])
-    #                     X = [x[1:12]..., 0.0, x[13:26]..., 0.0, x[27], x[28]]
-    #                     γ = (SMatrix{3, 5, Float64}(transpose(reshape(X[1:15], (5, 3)))), SMatrix{3, 5, Float64}(transpose(reshape(X[16:30], (5, 3)))))
+end
 
-    #                     # Include rotation as DOFs                  
-    #                     bc_v = rotate_bc(trunk, (x[29], x[30]))
-    #                     println((x[29], x[30]))
-                        
-    #                     new_bcs = (x[29] == 0.0 && x[30] == 0.0) ? nothing : SVector{12, Float64}(bc_v)
-    #                     if !isnothing(new_bcs)
-    #                         println("Trying new BCs")
-    #                     end
-                        
-    #                     sol, _ = configurationSolver(bvp, trunk, γ, args...; uInit = [bc_v..., 0.0, 0.0, 0.0], new_bcs = new_bcs)
+function build_distance_function(
+            control_objective::ConfigurationControlObjective, 
+            trunk::TrunkFast{T, N},
+            ivp::ODEProblem,
+            u0::SVector{12, Float64} = (@SVector [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]),
+            Zspan = (0.0, trunk.trunk.L), args...;
+            kwargs...) where {T, N}
 
-    #                     # Adapt for vectors
-    #                     sol_r = sol(controlObjective.args[1])[1:3];
-    #                     val = sqeuclidean(sol_r, controlObjective.properties[1, :])
-    #                     @info "Current objective: $val"
-    #                     return val; 
-    #                 end)
-    #     else
-    #         return ((x, p) -> begin
-    #                     # γ = ([x[1:5]; x[6:10]; x[11:15]], [x[16:20]; x[21:25]; x[26:30]])
-    #                     X = [x[1:12]..., 0.0, x[13:26]..., 0.0, x[27], x[28]]
-    #                     γ = (SMatrix{3, 5, Float64}(transpose(reshape(X[1:15], (5, 3)))), SMatrix{3, 5, Float64}(transpose(reshape(X[16:30], (5, 3)))))
+    arg = control_objective.args
+    prop = control_objective.properties
+    types = control_objective.propertyTypes
+    weights = control_objective.weights
 
-    #                     sol, _ = configurationSolver(bvp, trunk, γ, args...; uInit = bvp.u0)
+    return ((x, p) -> begin
+        X = [x[1:12]..., 0.0, x[13:26]..., 0.0, x[27], x[28]]
+        γ = (SMatrix{3, 5, Float64}(transpose(reshape(X[1:15], (5, 3)))), SMatrix{3, 5, Float64}(transpose(reshape(X[16:30], (5, 3)))))
 
-    #                     # Adapt for vectors
-    #                     sol_r = sol(controlObjective.args[1])[1:3];
-    #                     val = sqeuclidean(sol_r, controlObjective.properties[1, :])
-    #                     @info "Current objective: $val"
-    #                     return val; 
-    #                 end)
-    #     end
-    # else
-    #     # Implement
-    # end
+        # Include rotation as DOFs                  
+        bc_v = rotate_bc(trunk, (x[29], x[30]))
+        
+        # new_bcs = (x[29] == bvp.p[6][1] && x[30] == bvp.p[6][2]) ? nothing : SVector{12, Float64}(bc_v)
+        
+        sol, _ = ivp_solve_single(ivp, trunk, γ, args...; new_u0 = bc_v, kwargs...)
 
+        out = 0.0
+        for i in eachindex(prop)
+            prop_i = prop[i]
+            arg_i = arg[i]
+            t = types[i]
+            weights_i = weights[i]
+            for j in eachindex(arg_i)
+                sol_arg = sol(arg_i[j])
+                if t === r
+                    sol_prop = sol_arg[1:3]
+                    dist_r = euclidean(sol_prop, prop_i[j, :])
+                    # @info "r-distance @Z = $(arg_i[j]): $dist_r"
 
+                    out = out + weights_i[j] * dist_r
+                elseif t === d3 
+                    sol_prop = sol_arg[10:12]
+                    dist_d3 = euclidean(sol_prop, prop_i[j, :])
+                    # @info "d3-distance @Z = $(arg_i[j]): $dist_d3"
+
+                    out = out + weights_i[j] * dist_d3
+                end
+            end
+        end
+        @info "Current objective: $out"
+        return out;
+    end)
 end
 
 function rotate_bc(trunk::TrunkFast{T, N}, θ::Tuple{Float64, Float64}) where {T, N}
@@ -248,13 +255,23 @@ function rotate_bc(trunk::TrunkFast{T, N}, θ::Tuple{Float64, Float64}) where {T
     bc_v
 end
 
-function optimize_activation(control_objective::ConfigurationControlObjective, trunk::TrunkFast{T, N}, bvp::BVProblem, args...; optimize_bc = false, x0::Vector{Float64} = (optimize_bc ? zeros(30) : zeros(28)), x_previous::Vector{Float64} = x0, uInit = nothing, maxtime = 60.0, kwargs...) where {T, N}
+function optimize_activation(
+        control_objective::ConfigurationControlObjective, 
+        trunk::TrunkFast{T, N}, 
+        bvp::BVProblem, 
+        args...; 
+        optimize_bc = false, 
+        x0::Vector{Float64} = (optimize_bc ? zeros(30) : zeros(28)), 
+        x_previous::Vector{Float64} = x0, 
+        uInit = nothing, 
+        maxtime = 60.0, 
+        kwargs...) where {T, N}
     if !isnothing(uInit)
         bvp = remake(bvp; u0 = uInit)
     end
     f = build_distance_function(control_objective, trunk, self_weight_solve_single, bvp, x_previous, args...; optimize_bc = optimize_bc, kwargs...)
     
-    # println(f(x0, nothing))
+    println(f(x0, nothing))
     # g = (x, p) -> (f(x, p) + 0.1 * norm(x, 2)^2)
 
     prob = OptimizationProblem(f, x0, nothing; kwargs...);
@@ -280,6 +297,43 @@ function optimize_activation(control_objective::ConfigurationControlObjective, t
         return sol[1:28], γ
     end
 end
+
+function optimize_activation(
+        control_objective::ConfigurationControlObjective, 
+        trunk::TrunkFast{T, N}, 
+        ivp::ODEProblem, args...; 
+        x0::SVector{30, Float64} = (@SVector zeros(30)), 
+        u0 = nothing, 
+        maxtime = 60.0, 
+        kwargs...) where {T, N}
+    if !isnothing(u0)
+        ivp = remake(ivp; u0 = u0)
+    end
+
+    f = build_distance_function(control_objective, trunk, ivp, args...; kwargs...)
+    
+    println(f(x0, nothing))
+
+    prob = OptimizationProblem(f, x0, nothing; kwargs...);
+
+    println("Optimization start")
+    # sol = solve(prob, NLopt.GN_DIRECT_L_RAND(), maxtime = maxtime)
+
+    # sol = solve(prob, NLopt.GN_DIRECT(), maxtime = maxtime)
+
+    sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_NELDERMEAD(), maxtime = maxtime)
+
+    @info "::::::::::::FINAL OBJECTIVE = $(sol.objective) ::::::::::::::"
+
+    X = [sol[1:12]..., 0.0, sol[13:26]..., 0.0, sol[27], sol[28]]
+    γ = (SMatrix{3, 5, Float64}(transpose(reshape(X[1:15], (5, 3)))), SMatrix{3, 5, Float64}(transpose(reshape(X[16:30], (5, 3)))))
+    
+
+    θ = (sol[29], sol[30])
+    new_bcs = SVector{12, Float64}(rotate_bc(trunk, θ))
+    return sol[1:28], γ, θ, new_bcs
+end
+
 
 # Adapted from Kochenderfer, M. J., & Wheeler, T. A. (2019). Algorithms for optimization. MIT Press.
 function ce_method_trunk(f, P, k_max, m = 100, m_elite = 10)
