@@ -434,7 +434,8 @@ function self_weight_solve(trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float
 end
 
 function build_trunk_bvp(trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}} = ((@SMatrix zeros(3, 5)), (@SMatrix zeros(3, 5)));
-        m0::Vector{Float64} = [0.0, 0.0, 0.0], uInit::Vector{Float64} = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, m0[1], m0[2], m0[3]],
+        bcs = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+        m0::Vector{Float64} = [0.0, 0.0, 0.0], uInit::Vector{Float64} = [bcs..., m0[1], m0[2], m0[3]],
         g::Float64 = -9.8, F::SVector{3, Float64} = SVector{3, Float64}([0.0, 0.0, 0.0])) where {T, N}
     activation = ActivatedTrunkQuantities{T, N}(trunkFast = trunk, γ = γ)
     
@@ -442,7 +443,7 @@ function build_trunk_bvp(trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float64
     ρlin0Int = trunk.ρlin0Int
     u_hat = activation.u_hat
 
-    bcs = SVector{12, Float64}(uInit[1:12]);
+    bcs = SVector{12, Float64}(bcs)
     Zspan = (0.0, trunk.trunk.L::Float64);
     
     p = (g, ρlin0Int, stiffness, u_hat, F, bcs)
@@ -461,7 +462,6 @@ function self_weight_solve_single(bvp::BVProblem, trunk::TrunkFast{T, N}, γ::Tu
     if isnothing(new_bcs)
         bvp_new = remake(bvp; u0 = uInit, p = (bvp.p[1], bvp.p[2], a.new_K, u_hat, bvp.p[5], bvp.p[6]))
     else
-        println("Remaking BVP bcs")
         bvp_new = remake(bvp; u0 = uInit, p = (bvp.p[1], bvp.p[2], a.new_K, u_hat, bvp.p[5], new_bcs))
     end
     println(bvp_new.p[6])
