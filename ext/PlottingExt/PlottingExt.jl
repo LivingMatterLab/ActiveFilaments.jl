@@ -676,13 +676,13 @@ function plot_muscle!(sol, R1, R2, Θ1, Θ2, Z1, Z2, color, R_factor = 1.0; n = 
     # R2 surface
     out = [sol(u)[1:3] + R_factor * R2(u) * AngleAxis(v, sol(u)[10], sol(u)[11], sol(u)[12]) * [sol(u)[4], sol(u)[5], sol(u)[6]] for u in Z, v in Θ]
     x, y, z = extract_xyz(out, flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, transparency = transparency)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity_fibers), n, n), ssao = true, invert_normals = true, transparency = transparency)
 
     # R1 surface
     if R1_surface
         out = [sol(u)[1:3] + R_factor * R1(u) * AngleAxis(v, sol(u)[10], sol(u)[11], sol(u)[12]) * [sol(u)[4], sol(u)[5], sol(u)[6]] for u in Z, v in Θ]
         x, y, z = extract_xyz(out, flipped)
-        GLMakie.surface!(x, y, z, color = fill((color, opacity_fibers), n, n), shading = true, ssao = true, invert_normals = false, transparency = transparency)
+        GLMakie.surface!(x, y, z, color = fill((color, opacity_fibers), n, n), ssao = true, invert_normals = false, transparency = transparency)
     end
 
     # Z1 cap
@@ -690,14 +690,14 @@ function plot_muscle!(sol, R1, R2, Θ1, Θ2, Z1, Z2, color, R_factor = 1.0; n = 
         R = LinRange(R_factor * R1(Z1), R_factor * R2(Z1), n)
         out = [sol(Z1)[1:3] + v * AngleAxis(u, sol(Z1)[10], sol(Z1)[11], sol(Z1)[12]) * [sol(Z1)[4], sol(Z1)[5], sol(Z1)[6]] for u in Θ, v in R]
         x, y, z = extract_xyz(out, flipped)
-        GLMakie.surface!(x, y, z, color = fill((color, 1.0), n, n), shading = true, ssao = true, invert_normals = false, transparency = false)
+        GLMakie.surface!(x, y, z, color = fill((color, 1.0), n, n), ssao = true, invert_normals = false, transparency = false)
     end
 
     # Z2 cap
     R = LinRange(R_factor * R1(Z2), R_factor * R2(Z2), n)
     out = [sol(Z2)[1:3] + v * AngleAxis(u, sol(Z2)[10], sol(Z2)[11], sol(Z2)[12]) * [sol(Z2)[4], sol(Z2)[5], sol(Z2)[6]] for u in Θ, v in R]
     x, y, z = extract_xyz(out, flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, 1.0), n, n), shading = true, ssao = true, invert_normals = true, transparency = false)
+    GLMakie.surface!(x, y, z, color = fill((color, 1.0), n, n), ssao = true, invert_normals = true, transparency = false)
 
     # Θ1 side
     out = Matrix{SVector{3, Float64}}(undef, n, n);
@@ -706,7 +706,7 @@ function plot_muscle!(sol, R1, R2, Θ1, Θ2, Z1, Z2, color, R_factor = 1.0; n = 
         out[i, :] = [sol(u)[1:3] + v * AngleAxis(Θ1, sol(u)[10], sol(u)[11], sol(u)[12]) * [sol(u)[4], sol(u)[5], sol(u)[6]] for v in LinRange(R_factor * R1(u), R_factor * R2(u), n)]
     end
     x, y, z = extract_xyz(out, flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, transparency = transparency)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity_fibers), n, n), ssao = true, invert_normals = true, transparency = transparency)
 
     # Θ2 side
     out = Matrix{SVector{3, Float64}}(undef, n, n);
@@ -715,21 +715,21 @@ function plot_muscle!(sol, R1, R2, Θ1, Θ2, Z1, Z2, color, R_factor = 1.0; n = 
         out[i, :] = [sol(u)[1:3] + v * AngleAxis(Θ2, sol(u)[10], sol(u)[11], sol(u)[12]) * [sol(u)[4], sol(u)[5], sol(u)[6]] for v in LinRange(R_factor * R1(u), R_factor * R2(u), n)]
     end
     x, y, z = extract_xyz(out, flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity_fibers), n, n), shading = true, ssao = true, invert_normals = false, transparency = transparency)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity_fibers), n, n), ssao = true, invert_normals = false, transparency = transparency)
 end
 
 function plot_outer_trunk!(trunk::Trunk{T, N}, sol, R_factor = 1.0; n = 40, color = :gray, opacity = 0.3, flipped = false) where {T, N}
     out = [sol(u)[1:3] + (R_factor * (trunk.R00 * 1.01 - u * tan(trunk.φ0))) * AngleAxis(v, sol(u)[10], sol(u)[11], sol(u)[12]) * [sol(u)[4], sol(u)[5], sol(u)[6]] for u in LinRange(0.0, trunk.L, n), v in LinRange(0.0, 2 * pi, n)]
     x, y, z = extract_xyz(out, flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = true, ssao = true, invert_normals = true, transparency = true)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), ssao = true, invert_normals = true, transparency = true)
 
     out = [sol(-trunk.L / 1000.0)[1:3] + v * AngleAxis(u, sol(0.0)[10], sol(0.0)[11], sol(0.0)[12]) * [sol(0.0)[4], sol(0.0)[5], sol(0.0)[6]] for u in LinRange(0.0, 2 * pi, n), v in LinRange(0.0, R_factor * trunk.R00 * 1.01, n)]
     x, y, z = extract_xyz(out, flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = true, ssao = true, invert_normals = false, transparency = true)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), ssao = true, invert_normals = false, transparency = true)
 
     out = [sol(trunk.L * 1.001)[1:3] + v * AngleAxis(u, sol(trunk.L)[10], sol(trunk.L)[11], sol(trunk.L)[12]) * [sol(trunk.L)[4], sol(trunk.L)[5], sol(trunk.L)[6]] for u in LinRange(0.0, 2 * pi, n), v in LinRange(0.0, R_factor * (trunk.R00 * 1.01 - trunk.L * tan(trunk.φ0)), n)]
     x, y, z = extract_xyz(out, flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = true, ssao = true, invert_normals = true, transparency = true)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), ssao = true, invert_normals = true, transparency = true)
 end
 
 function ActiveFilaments.plot_trunk!(trunk_sim::TrunkFast{T, N}, sol, a; n = 40, colors = [:orange, :magenta, :cyan, :red, :blue], flipped = false, opacity_fibers = 1.0, opacity_trunk = 0.3) where {T, N}
@@ -737,12 +737,14 @@ function ActiveFilaments.plot_trunk!(trunk_sim::TrunkFast{T, N}, sol, a; n = 40,
     R1 = trunk_sim.interpolations.R1
     R2 = trunk_sim.interpolations.R2
 
-    plot_outer_trunk!(trunk, sol, a.R_factor; n = n, flipped = flipped, opacity = opacity_trunk)
+    @time R_factor = compute_R_factor_current(trunk_sim.trunk, sol)
+    println(a.R_factor)
+    plot_outer_trunk!(trunk, sol, R_factor; n = n, flipped = flipped, opacity = opacity_trunk)
     for i in 1:T
         for j in 1:5
-            plot_muscle!(sol, R1[j](i), R2[j](i), trunk.Θ1R[i, j], trunk.Θ2R[i, j], trunk.Z1[i], trunk.Z2[i], colors[j], a.R_factor; n = n, R1_surface = (j >= 4), Z1_cap = (i == 1), flipped = flipped, opacity_fibers = (j < 5 ? opacity_fibers : 1.0), transparency = (j < 5))
+            plot_muscle!(sol, R1[j](i), R2[j](i), trunk.Θ1R[i, j], trunk.Θ2R[i, j], trunk.Z1[i], trunk.Z2[i], colors[j], R_factor; n = n, R1_surface = (j >= 4), Z1_cap = (i == 1), flipped = flipped, opacity_fibers = (j < 5 ? opacity_fibers : 1.0), transparency = (j < 5))
 
-            plot_muscle!(sol, R1[j](i), R2[j](i), trunk.Θ1L[i, j], trunk.Θ2L[i, j], trunk.Z1[i], trunk.Z2[i], colors[j], a.R_factor; n = n, R1_surface = (j >= 4), Z1_cap = (i == 1), flipped = flipped, opacity_fibers = (j < 5 ? opacity_fibers : 1.0), transparency = (j < 5)) 
+            plot_muscle!(sol, R1[j](i), R2[j](i), trunk.Θ1L[i, j], trunk.Θ2L[i, j], trunk.Z1[i], trunk.Z2[i], colors[j], R_factor; n = n, R1_surface = (j >= 4), Z1_cap = (i == 1), flipped = flipped, opacity_fibers = (j < 5 ? opacity_fibers : 1.0), transparency = (j < 5)) 
         end
     end
 end
@@ -756,24 +758,24 @@ function plot_muscle_exploded!(R1, R2, Θ1, Θ2, Z1, Z2, offset_factor, color; n
     # R2 surface
     out = [[0.0, 0.0, u] + R2(u) * AngleAxis(v, 0.0, 0.0, 1.0) * ex + offset  for u in Z, v in Θ]
     x, y, z = extract_xyz(out, flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = true, ssao = true, invert_normals = true, specular = Vec3f(0.6), transparency = true)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), ssao = true, invert_normals = true, specular = Vec3f(0.6), transparency = true)
 
     # R1 surface
     out = [[0.0, 0.0, u] + R1(u) * AngleAxis(v, 0.0, 0.0, 1.0) * ex + offset for u in Z, v in Θ]
     x, y, z = extract_xyz(out, flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = true, ssao = true, invert_normals = false, specular = Vec3f(0.6), transparency = true)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), ssao = true, invert_normals = false, specular = Vec3f(0.6), transparency = true)
 
     # Z1 cap
     R = LinRange(R1(Z1), R2(Z1), n)
     out = [[0.0, 0.0, Z1] + v * AngleAxis(u, 0.0, 0.0, 1.0) * ex + offset for u in Θ, v in R]
     x, y, z = extract_xyz(out, flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = true, ssao = true, invert_normals = false, specular = Vec3f(0.6), transparency = true)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), ssao = true, invert_normals = false, specular = Vec3f(0.6), transparency = true)
 
     # Z2 cap
     R = LinRange(R1(Z2), R2(Z2), n)
     out = [[0.0, 0.0, Z2] + v * AngleAxis(u, 0.0, 0.0, 1.0) * ex + offset for u in Θ, v in R]
     x, y, z = extract_xyz(out, flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = true, ssao = true, invert_normals = true, specular = Vec3f(0.6), transparency = true)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), ssao = true, invert_normals = true, specular = Vec3f(0.6), transparency = true)
 
     # Θ1 side
     out = Matrix{SVector{3, Float64}}(undef, n, n);
@@ -782,7 +784,7 @@ function plot_muscle_exploded!(R1, R2, Θ1, Θ2, Z1, Z2, offset_factor, color; n
         out[i, :] = [[0.0, 0.0, u] + v * AngleAxis(Θ1, 0.0, 0.0, 1.0) * ex + offset for v in LinRange(R1(u), R2(u), n)]
     end
     x, y, z = extract_xyz(out, flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = true, ssao = true, invert_normals = true, specular = Vec3f(0.6), transparency = true)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), ssao = true, invert_normals = true, specular = Vec3f(0.6), transparency = true)
 
     # Θ2 side
     out = Matrix{SVector{3, Float64}}(undef, n, n);
@@ -791,7 +793,7 @@ function plot_muscle_exploded!(R1, R2, Θ1, Θ2, Z1, Z2, offset_factor, color; n
         out[i, :] = [[0.0, 0.0, u] + v * AngleAxis(Θ2, 0.0, 0.0, 1.0) * ex + offset for v in LinRange(R1(u), R2(u), n)]
     end
     x, y, z = extract_xyz(out, flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = true, ssao = true, invert_normals = false, specular = Vec3f(0.6), transparency = true)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), ssao = true, invert_normals = false, specular = Vec3f(0.6), transparency = true)
 end
 
 function ActiveFilaments.plot_trunk_exploded!(trunk_sim::TrunkFast{T, N}, a::ActivatedTrunkQuantities{T, N}, max_abs_γ::Float64; n = 40, colors = [:orange, :magenta, :cyan, :red, :blue],
