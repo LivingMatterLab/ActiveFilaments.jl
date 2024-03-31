@@ -35,13 +35,16 @@ using DocStringExtensions;
 using QuadGK;
 using Interpolations;
 using Optimization;
-using OptimizationOptimJL;
+# using OptimizationOptimJL;
 using Distances;
 using ForwardDiff;
 # using Zygote;
-using ReverseDiff;
+# using ReverseDiff;
 # using ModelingToolkit;
 using OptimizationNLopt;
+# using OptimizationBBO;
+# using OptimizationPRIMA;
+# using OptimizationNOMAD;
 
 import Base.copy
 #endregion ========================
@@ -96,11 +99,13 @@ export
     computeH,
     self_weight_solve,
     build_trunk_bvp,
+    build_trunk_wrap_bvp,
     self_weight_solve_single,
     optimize_activation,
     rotate_bc,
     build_trunk_ivp,
     ivp_solve_single,
+    compute_R_factor_current,
 
     plotReachabilityCloudRGB,
     plotReachabilityCloud,
