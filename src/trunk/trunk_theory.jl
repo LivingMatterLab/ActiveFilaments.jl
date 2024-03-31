@@ -311,8 +311,22 @@ function compute_uhat_interpolations(trunk::Trunk{T, N}, u_hat_array::SArray) wh
     u_hat
 end
 
+# Assumes constant ζ_hat in each segment
 function compute_R_factor(trunk::Trunk{T, N}, ζ_hat_array::SMatrix{T, N, Float64}) where {T, N}
     R_factor = sqrt(trunk.L / sum([ζ_hat_array[i, 1] * (trunk.Z2[i] - trunk.Z1[i]) for i in 1:T]))
+    return R_factor
+end
+
+# R_factor in the current configuration (with external loading)
+function compute_R_factor_current(trunk::Trunk{T, N}, sol; n = 200) where {T, N}
+    Z_for_len = LinRange(0.0, trunk.L, n)
+    len = 0.0
+    r_Z = [sol(Z_for_len[i])[1:3] for i in 1:n]
+    for i in 1:(n - 1)
+        len = len + euclidean(r_Z[i], r_Z[i + 1])
+    end
+    R_factor = sqrt(trunk.L / len)
+    println(R_factor)
     return R_factor
 end
 
@@ -394,6 +408,69 @@ function self_weight_trunk_de!(du, u,
     du[15] = ζ_hat * (u2 * u[13] - u1 * u[14]);
 end
 
+function self_weight_wrap_trunk_de!(du, u, 
+        p::Tuple{
+            Float64, 
+            Function, 
+            SVector{4, PiecewiseFunction{T, Interpolations.Extrapolation}}, 
+            SVector{4, PiecewiseFunction{T, Interpolations.Extrapolation}}, 
+            Tuple{Float64, Float64, Float64, SVector{3, Float64}, Function}, 
+            SVector{12, Float64}
+            }, Z) where T
+    u1_hat = p[4][1](Z)
+    u2_hat = p[4][2](Z)
+    u3_hat = p[4][3](Z)
+    ζ_hat = p[4][4](Z)
+    
+    w = p[5][1]
+    L = p[5][2]
+    Z_0 = p[5][3]
+    r_C = p[5][4]
+    R0_act = p[5][5](Z)
+
+    w_n = w * (L - max(Z, Z_0))
+
+    moment_r = r_C - u[1:3]
+    moment_r = moment_r / norm(moment_r) * R0_act
+    l1 = w * (u[4] * moment_r[2] - u[5] * moment_r[1])
+    l2 = w * (u[7] * moment_r[2] - u[8] * moment_r[1])
+    l3 = w * (u[10] * moment_r[2] - u[11] * moment_r[1])
+
+    # l1 = 0
+    # l2 = 0
+    # l3 = 0
+
+    ρlinInt = p[2](Z);
+    n_factor = -p[1] * ρlinInt + w_n
+
+    n1 = n_factor * u[6];
+    n2 = n_factor * u[9];
+    n3 = n_factor * u[12];
+
+    ζF = n3 / p[3][4](Z) + 1.0;
+    ζ = ζ_hat * ζF;
+    u1 = u1_hat + u[13] / p[3][1](Z);
+    u2 = u2_hat + u[14] / p[3][2](Z);
+    u3 = u3_hat + u[15] / p[3][3](Z);
+
+    du[1] = ζ * u[10];
+    du[2] = ζ * u[11];
+    du[3] = ζ * u[12];
+    du[4] = ζ_hat * (u3 * u[7] - u2 * u[10]);
+    du[5] = ζ_hat * (u3 * u[8] - u2 * u[11]);
+    du[6] = ζ_hat * (u3 * u[9] - u2 * u[12]);
+    du[7] = ζ_hat * (u1 * u[10] - u3 * u[4]);
+    du[8] = ζ_hat * (u1 * u[11] - u3 * u[5]);
+    du[9] = ζ_hat * (u1 * u[12] - u3 * u[6]);
+    du[10] = ζ_hat * (u2 * u[4] - u1 * u[7]);
+    du[11] = ζ_hat * (u2 * u[5] - u1 * u[8]);
+    du[12] = ζ_hat * (u2 * u[6] - u1 * u[9]);
+    du[13] = ζ_hat * (u3 * u[14] - u2 * u[15]) + ζ * n2 + l1;
+    du[14] = ζ_hat * (u1 * u[15] - u3 * u[13]) - ζ * n1 + l2;
+    du[15] = ζ_hat * (u2 * u[13] - u1 * u[14]) + l3;
+end
+
+## Revise this to consider updated new_K
 function self_weight_solve(trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}}; 
         m0::Vector{Float64} = [0.0, 0.0, 0.0], uInit::Vector{Float64} = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, m0[1], m0[2], m0[3]],
         g::Float64 = -9.8, Ng::Integer = 4, solver = 1, kwargs...) where {T, N}
@@ -465,9 +542,35 @@ function build_trunk_bvp(trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float64
     bvp, activation
 end
 
+function build_trunk_wrap_bvp(trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}} = ((@SMatrix zeros(3, 5)), (@SMatrix zeros(3, 5)));
+        bcs = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+        m0::Vector{Float64} = [0.0, 0.0, 0.0], uInit::Vector{Float64} = [bcs..., m0[1], m0[2], m0[3]],
+        g::Float64 = -9.8,
+        W_C::Float64 = 0.0,
+        Z_0::Float64 = trunk.trunk.L,
+        r_C::SVector{3, Float64} = SVector{3, Float64}([0.0, 0.0, 0.0])) where {T, N}
+    activation = ActivatedTrunkQuantities{T, N}(trunkFast = trunk, γ = γ)
+    L = trunk.trunk.L
+    w = W_C / (L - Z_0)
+    R0_act = Z -> (activation.R_factor * trunk.R00 - Z * tan(trunk.trunk.φ0))
+
+    stiffness = activation.new_K
+    ρlin0Int = trunk.ρlin0Int
+    u_hat = activation.u_hat
+
+    bcs = SVector{12, Float64}(bcs)
+    Zspan = (0.0, L::Float64);
+
+    p = (g, ρlin0Int, stiffness, u_hat, (w, L, Z_0, r_C, R0_act), bcs)
+    bvp = TwoPointBVProblem(self_weight_wrap_trunk_de!, (self_weight_bc_start!, self_weight_bc_end!), uInit, Zspan, p;
+                                bcresid_prototype = (zeros(12), zeros(3)))
+
+    bvp, activation
+end
+
 function self_weight_solve_single(bvp::BVProblem, trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}}; 
         m0::Vector{Float64} = [0.0, 0.0, 0.0], uInit::Vector{Float64} = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, m0[1], m0[2], m0[3]], 
-        solver = 1, new_bcs = nothing, abstol = 1e-4, reltol = 1e-4, kwargs...) where {T, N}
+        solver = 1, new_bcs = nothing, abstol = 1e-8, reltol = 1e-6, kwargs...) where {T, N}
     a = ActivatedTrunkQuantities{T, N}(trunkFast = trunk, γ = γ)
     u_hat = a.u_hat
     
@@ -483,7 +586,7 @@ function self_weight_solve_single(bvp::BVProblem, trunk::TrunkFast{T, N}, γ::Tu
         # sol = solve(bvp_new, MIRK4(), dt = trunk.trunk.L / 100.0, abstol = 1e-3, reltol = 1e-3);
         sol = solve(bvp_new, MIRK4(), dt = trunk.trunk.L / 100.0, abstol = abstol, reltol = reltol);
     elseif solver == 2
-        sol = solve(bvp_new, Shooting(AutoVern7(Rodas4())), dt = trunk.trunk.L / 100.0, abstol = 1e-6, reltol = 1e-6);
+        sol = solve(bvp_new, Shooting(AutoVern7(Rodas4())), dt = trunk.trunk.L / 100.0, abstol = abstol, reltol = reltol);
     end
 
     m_end = sol(trunk.trunk.L)[13:15]
@@ -495,6 +598,38 @@ function self_weight_solve_single(bvp::BVProblem, trunk::TrunkFast{T, N}, γ::Tu
 
     sol, a
 end
+
+
+# function self_weight_wrap_solve_single(bvp::BVProblem, trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}}; 
+#         m0::Vector{Float64} = [0.0, 0.0, 0.0], uInit::Vector{Float64} = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, m0[1], m0[2], m0[3]], 
+#         solver = 1, new_bcs = nothing, abstol = 1e-4, reltol = 1e-4, kwargs...) where {T, N}
+#     a = ActivatedTrunkQuantities{T, N}(trunkFast = trunk, γ = γ)
+#     u_hat = a.u_hat
+    
+#     if isnothing(new_bcs)
+#         bvp_new = remake(bvp; u0 = uInit, p = (bvp.p[1], bvp.p[2], a.new_K, u_hat, bvp.p[5], bvp.p[6]))
+#     else
+#         println("Remaking BVP bcs")
+#         bvp_new = remake(bvp; u0 = uInit, p = (bvp.p[1], bvp.p[2], a.new_K, u_hat, bvp.p[5], new_bcs))
+#     end
+#     println(bvp_new.p[6])
+
+#     if solver == 1
+#         # sol = solve(bvp_new, MIRK4(), dt = trunk.trunk.L / 100.0, abstol = 1e-3, reltol = 1e-3);
+#         sol = solve(bvp_new, MIRK4(), dt = trunk.trunk.L / 100.0, abstol = abstol, reltol = reltol);
+#     elseif solver == 2
+#         sol = solve(bvp_new, Shooting(AutoVern7(Rodas4())), dt = trunk.trunk.L / 100.0, abstol = 1e-6, reltol = 1e-6);
+#     end
+
+#     m_end = sol(trunk.trunk.L)[13:15]
+#     # println(m_end)
+#     # println(sol(0.0)[13:15])
+#     if (abs(m_end[1]) > 0.001 || abs(m_end[2]) > 0.001 || abs(m_end[3]) > 0.001)
+#         println("WARNING: Non-zero end moment")
+#     end
+
+#     sol, a
+# end
 
 
 function ivp_solve_single(
