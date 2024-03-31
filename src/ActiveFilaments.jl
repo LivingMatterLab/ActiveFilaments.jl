@@ -100,6 +100,7 @@ export
     self_weight_solve,
     build_trunk_bvp,
     build_trunk_wrap_bvp,
+    build_trunk_wrap_nbodyc_bvp,
     self_weight_solve_single,
     optimize_activation,
     rotate_bc,
