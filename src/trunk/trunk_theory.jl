@@ -651,10 +651,10 @@ function self_weight_solve_single(bvp::BVProblem, trunk::TrunkFast{T, N}, γ::Tu
     if isnothing(new_bcs)
         bvp_new = remake(bvp; u0 = uInit, p = (bvp.p[1], bvp.p[2], a.new_K, u_hat, bvp.p[5], bvp.p[6]))
     else
-        println("Remaking BVP bcs")
+        # println("Remaking BVP bcs")
         bvp_new = remake(bvp; u0 = uInit, p = (bvp.p[1], bvp.p[2], a.new_K, u_hat, bvp.p[5], new_bcs))
     end
-    println(bvp_new.p[6])
+    # println(bvp_new.p[6])
 
     if solver == 1
         # sol = solve(bvp_new, MIRK4(), dt = trunk.trunk.L / 100.0, abstol = 1e-3, reltol = 1e-3);
