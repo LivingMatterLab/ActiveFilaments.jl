@@ -103,6 +103,8 @@ function distance_function(
         Zspan::Tuple{Float64, Float64} = (0.0, trunk.trunk.L), args...;
         abstol::Float64 = 1e-8,
         reltol::Float64 = 1e-6,
+        ζ_hat_low::Float64 = 0.67,
+        ζ_hat_high::Float64 = 1.35,
         kwargs...
         ) where {T, N}
 
@@ -119,7 +121,7 @@ function distance_function(
     
     new_bcs = (x[29] == bvp.p[6][1] && x[30] == bvp.p[6][2]) ? nothing : SVector{12, Float64}(bc_v)
     
-    sol, _ = self_weight_solve_single(bvp, trunk, γ, args...; 
+    sol, a = self_weight_solve_single(bvp, trunk, γ, args...; 
                     uInit = [bc_v..., 0.0, 0.0, 0.0], 
                     new_bcs = new_bcs, 
                     abstol = abstol, reltol = reltol, 
@@ -136,18 +138,20 @@ function distance_function(
             if t === r
                 sol_prop = sol_arg[1:3]
                 dist_r = euclidean(sol_prop, prop_i[j, :])
-                @info "r-distance @Z = $(arg_i[j]): $dist_r"
+                # @info "r-distance @Z = $(arg_i[j]): $dist_r"
 
                 out = out + weights_i[j] * dist_r
             elseif t === d3 
                 sol_prop = sol_arg[10:12]
                 dist_d3 = euclidean(sol_prop, prop_i[j, :])
-                @info "d3-distance @Z = $(arg_i[j]): $dist_d3"
+                # @info "d3-distance @Z = $(arg_i[j]): $dist_d3"
 
                 out = out + weights_i[j] * dist_d3
             end
         end
     end
+    ζ_hat_penalty = 1e3 * (any(a.u_hat_array[4][:, 1] .< ζ_hat_low) || any(a.u_hat_array[4][:, 1] .> ζ_hat_high))
+    out = out + ζ_hat_penalty
     @info "Current objective: $out"
     return out;
 end
@@ -244,6 +248,8 @@ function build_distance_function(
             ivp::ODEProblem,
             u0::SVector{12, Float64} = (@SVector [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]),
             Zspan = (0.0, trunk.trunk.L), args...;
+            ζ_hat_low = 0.67,
+            ζ_hat_high = 1.35,
             kwargs...) where {T, N}
 
     arg = control_objective.args
@@ -260,7 +266,7 @@ function build_distance_function(
         
         # new_bcs = (x[29] == bvp.p[6][1] && x[30] == bvp.p[6][2]) ? nothing : SVector{12, Float64}(bc_v)
         
-        sol, _ = ivp_solve_single(ivp, trunk, γ, args...; new_u0 = bc_v, kwargs...)
+        sol, a = ivp_solve_single(ivp, trunk, γ, args...; new_u0 = bc_v, kwargs...)
 
         out = 0.0
         for i in eachindex(prop)
@@ -285,6 +291,8 @@ function build_distance_function(
                 end
             end
         end
+        ζ_hat_penalty = 1e3 * (any(a.u_hat_array[4][:, 1] .< ζ_hat_low) || any(a.u_hat_array[4][:, 1] .> ζ_hat_high))
+        out = out + ζ_hat_penalty
         # @info "Current objective: $out"
         return out;
     end)
@@ -354,6 +362,7 @@ function optimize_activation(
     if local_min
         sol = solve(prob, NLopt.LN_SBPLX(), maxtime = maxtime)
     else
+        # sol = solve(prob, NLopt.GN_DIRECT(), maxtime = maxtime)
         sol = solve(prob, NLopt.GN_DIRECT_L_RAND(), maxtime = maxtime)
     end
     # sol = solve(prob, NLopt.GN_DIRECT_L_RAND(), maxtime = maxtime)
@@ -402,7 +411,9 @@ function optimize_activation(
 
     # sol = solve(prob, NLopt.GN_DIRECT(), maxtime = maxtime)
 
-    sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_NELDERMEAD(), maxtime = maxtime)
+    # sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_NELDERMEAD(), maxtime = maxtime)
+
+    sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_SBPLX(), maxtime = maxtime)
 
     # sol = solve(prob, OptimizationBBO.BBO_adaptive_de_rand_1_bin_radiuslimited(), maxtime = maxtime; NThreads=Threads.nthreads()-1)
 
