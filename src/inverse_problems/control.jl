@@ -97,14 +97,15 @@ function distance_function(
         x::Vector{Float64},
         control_objective::ConfigurationControlObjective,
         trunk::TrunkFast{T, N},
-        bvp::BVProblem,
+        bvp::BVProblem;
         m0::Vector{Float64} = [0.0, 0.0, 0.0], 
-        uInit::Vector{Float64} = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, m0[1], m0[2], m0[3]],
-        Zspan::Tuple{Float64, Float64} = (0.0, trunk.trunk.L), args...;
+        u0 = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, m0[1], m0[2], m0[3]],
+        Zspan::Tuple{Float64, Float64} = (0.0, trunk.trunk.L),
         abstol::Float64 = 1e-8,
         reltol::Float64 = 1e-6,
         ζ_hat_low::Float64 = 0.67,
         ζ_hat_high::Float64 = 1.35,
+        solver = 1,
         kwargs...
         ) where {T, N}
 
@@ -121,10 +122,11 @@ function distance_function(
     
     new_bcs = (x[29] == bvp.p[6][1] && x[30] == bvp.p[6][2]) ? nothing : SVector{12, Float64}(bc_v)
     
-    sol, a = self_weight_solve_single(bvp, trunk, γ, args...; 
-                    uInit = [bc_v..., 0.0, 0.0, 0.0], 
+    sol, a = self_weight_solve_single(bvp, trunk, γ; 
+                    uInit = u0, 
                     new_bcs = new_bcs, 
                     abstol = abstol, reltol = reltol, 
+                    solver = solver,
                     kwargs...)
 
     out = 0.0
@@ -332,18 +334,19 @@ function optimize_activation(
         optimize_bc = false, 
         x0::Vector{Float64} = (optimize_bc ? zeros(30) : zeros(28)), 
         x_previous::Vector{Float64} = x0, 
-        uInit = nothing, 
+        u0 = nothing, 
         maxtime = 60.0, 
         abstol = 1e-8,
         reltol = 1e-6,
         local_min = false,
+        solver = 1,
         kwargs...) where {T, N}
-    if !isnothing(uInit)
-        bvp = remake(bvp; u0 = uInit)
+    if !isnothing(u0)
+        bvp = remake(bvp; u0 = u0)
     end
 
-    f = (x, p) -> distance_function(x, control_objective, trunk, bvp, args...; 
-                            abstol = abstol, reltol = reltol, kwargs...)
+    f = (x, p) -> distance_function(x, control_objective, trunk, bvp; u0 = u0, 
+                            abstol = abstol, reltol = reltol, solver = solver, kwargs...)
 
     # f = build_distance_function(control_objective, trunk, self_weight_solve_single, bvp, x_previous, args...; optimize_bc = optimize_bc, abstol = abstol, reltol = reltol, kwargs...)
     
@@ -351,7 +354,6 @@ function optimize_activation(
     println(f(x0, nothing))
     # g = (x, p) -> (f(x, p) + 0.1 * norm(x, 2)^2)
 
-    println(kwargs...)
     prob = OptimizationProblem(f, x0, nothing; kwargs...);
 
     # sol = solve(prob, NLopt.G_MLSL(), local_method = NLopt.LN_NELDERMEAD(), maxtime = 60.0)
@@ -382,7 +384,7 @@ function optimize_activation(
     if optimize_bc
         θ = (sol[29], sol[30])
         new_bcs = SVector{12, Float64}(rotate_bc(trunk, θ))
-        return sol[1:28], γ, θ, new_bcs
+        return sol[1:28], γ, θ, new_bcs, sol.objective
     else
         return sol[1:28], γ
     end
@@ -402,7 +404,7 @@ function optimize_activation(
 
     f = build_distance_function(control_objective, trunk, ivp, args...; kwargs...)
     
-    # println(f(x0, nothing))
+    println(f(x0, nothing))
 
     prob = OptimizationProblem(f, x0, nothing; kwargs...);
 
@@ -411,9 +413,9 @@ function optimize_activation(
 
     # sol = solve(prob, NLopt.GN_DIRECT(), maxtime = maxtime)
 
-    # sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_NELDERMEAD(), maxtime = maxtime)
+    sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_NELDERMEAD(), maxtime = maxtime)
 
-    sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_SBPLX(), maxtime = maxtime)
+    # sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_SBPLX(), maxtime = maxtime)
 
     # sol = solve(prob, OptimizationBBO.BBO_adaptive_de_rand_1_bin_radiuslimited(), maxtime = maxtime; NThreads=Threads.nthreads()-1)
 

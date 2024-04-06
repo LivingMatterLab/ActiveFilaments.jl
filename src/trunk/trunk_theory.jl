@@ -8,7 +8,7 @@ function (p::PiecewiseFunction{T, Float64} where T)(x::Float64)
     end
 end
 
-function (p::PiecewiseFunction{T, Interpolations.Extrapolation} where T)(x::Float64)
+function (p::PiecewiseFunction{T, Interpolations.Extrapolation} where T)(x)
     for (object, range) in zip(p.objects, p.ranges)
         if (x >= range[1] && x <= range[2]) # Effectively: [a, b] for first segment, and then (a, b] for every subsequent
             return object(x);
@@ -643,7 +643,7 @@ function build_trunk_wrap_bvp(trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Fl
 end
 
 function self_weight_solve_single(bvp::BVProblem, trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}}; 
-        m0::Vector{Float64} = [0.0, 0.0, 0.0], uInit::Vector{Float64} = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, m0[1], m0[2], m0[3]], 
+        m0::Vector{Float64} = [0.0, 0.0, 0.0], uInit = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, m0[1], m0[2], m0[3]], 
         solver = 1, new_bcs = nothing, abstol = 1e-8, reltol = 1e-6, kwargs...) where {T, N}
     a = ActivatedTrunkQuantities{T, N}(trunkFast = trunk, γ = γ)
     u_hat = a.u_hat
@@ -653,14 +653,20 @@ function self_weight_solve_single(bvp::BVProblem, trunk::TrunkFast{T, N}, γ::Tu
     else
         # println("Remaking BVP bcs")
         bvp_new = remake(bvp; u0 = uInit, p = (bvp.p[1], bvp.p[2], a.new_K, u_hat, bvp.p[5], new_bcs))
+        
     end
     # println(bvp_new.p[6])
 
     if solver == 1
-        # sol = solve(bvp_new, MIRK4(), dt = trunk.trunk.L / 100.0, abstol = 1e-3, reltol = 1e-3);
         sol = solve(bvp_new, MIRK4(), dt = trunk.trunk.L / 100.0, abstol = abstol, reltol = reltol);
     elseif solver == 2
-        sol = solve(bvp_new, Shooting(AutoVern7(Rodas4())), dt = trunk.trunk.L / 100.0, abstol = abstol, reltol = reltol);
+        sol = solve(bvp_new, Shooting(AutoVern7(Rodas4())), abstol = abstol, reltol = reltol);
+    elseif solver == 3
+        sol = solve(bvp_new, BVPM2(), dt = trunk.trunk.L / 100.0, abstol = abstol, reltol = reltol);
+    elseif solver == 4
+        sol = solve(bvp_new, BVPSOL(), abstol = abstol, reltol = reltol);
+    elseif solver == 5
+        sol = solve(bvp_new, COLNEW(), dt = trunk.trunk.L / 100.0, abstol = abstol, reltol = reltol);
     end
 
     m_end = sol(trunk.trunk.L)[13:15]
