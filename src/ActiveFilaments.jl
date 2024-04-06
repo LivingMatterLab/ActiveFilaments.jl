@@ -45,6 +45,7 @@ using OptimizationNLopt;
 # using OptimizationBBO;
 # using OptimizationPRIMA;
 # using OptimizationNOMAD;
+using ODEInterfaceDiffEq;
 
 import Base.copy
 #endregion ========================
