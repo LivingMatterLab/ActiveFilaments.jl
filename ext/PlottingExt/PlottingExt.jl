@@ -723,11 +723,11 @@ function plot_outer_trunk!(trunk::Trunk{T, N}, sol, R_factor = 1.0; n = 40, colo
     x, y, z = extract_xyz(out, flipped)
     GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), ssao = true, invert_normals = true, transparency = true)
 
-    out = [sol(-trunk.L / 1000.0)[1:3] + v * AngleAxis(u, sol(0.0)[10], sol(0.0)[11], sol(0.0)[12]) * [sol(0.0)[4], sol(0.0)[5], sol(0.0)[6]] for u in LinRange(0.0, 2 * pi, n), v in LinRange(0.0, R_factor * trunk.R00 * 1.01, n)]
+    out = [sol(0.0)[1:3] - trunk.L / 1000.0 * sol(0.0)[10:12] + v * AngleAxis(u, sol(0.0)[10], sol(0.0)[11], sol(0.0)[12]) * [sol(0.0)[4], sol(0.0)[5], sol(0.0)[6]] for u in LinRange(0.0, 2 * pi, n), v in LinRange(0.0, R_factor * trunk.R00 * 1.01, n)]
     x, y, z = extract_xyz(out, flipped)
     GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), ssao = true, invert_normals = false, transparency = true)
 
-    out = [sol(trunk.L * 1.001)[1:3] + v * AngleAxis(u, sol(trunk.L)[10], sol(trunk.L)[11], sol(trunk.L)[12]) * [sol(trunk.L)[4], sol(trunk.L)[5], sol(trunk.L)[6]] for u in LinRange(0.0, 2 * pi, n), v in LinRange(0.0, R_factor * (trunk.R00 * 1.01 - trunk.L * tan(trunk.φ0)), n)]
+    out = [sol(trunk.L)[1:3] + trunk.L / 1000.0 * sol(trunk.L)[10:12] + v * AngleAxis(u, sol(trunk.L)[10], sol(trunk.L)[11], sol(trunk.L)[12]) * [sol(trunk.L)[4], sol(trunk.L)[5], sol(trunk.L)[6]] for u in LinRange(0.0, 2 * pi, n), v in LinRange(0.0, R_factor * (trunk.R00 * 1.01 - trunk.L * tan(trunk.φ0)), n)]
     x, y, z = extract_xyz(out, flipped)
     GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), ssao = true, invert_normals = true, transparency = true)
 end
