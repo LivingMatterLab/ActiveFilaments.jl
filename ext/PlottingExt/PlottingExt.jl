@@ -14,10 +14,13 @@ function ActiveFilaments.plotReachabilityCloudRGB(sols, activationsGamma::Matrix
     gravity = false, full_solution = false, flipped = false, showBox = true, hideAll = false, 
     azimuth = 1.275 * pi, elevation = pi / 8, 
     resolution = (3840, 2160), 
+    size = nothing,
     markersize = 2,
     perspectiveness = 0.0,
     transparency = false,
     opacity = 1.0,
+    for_rotation = false,
+    size_to_ax = false,
     kwargs...)
 
     if full_solution
@@ -49,8 +52,21 @@ function ActiveFilaments.plotReachabilityCloudRGB(sols, activationsGamma::Matrix
     end
 
     GLMakie.activate!()
-    fig = Figure(resolution = resolution)
-    ax = Axis3(fig[1, 1], aspect = :data, azimuth = azimuth, elevation = elevation, perspectiveness = perspectiveness; kwargs...)
+    if isnothing(size)
+        fig = Figure(resolution = resolution)
+    else
+        @info "Using size instead of resolution"
+        fig = Figure(size = size)
+    end
+    if size_to_ax
+        ax = Axis3(fig[1, 1], aspect = :data, azimuth = azimuth, elevation = elevation, perspectiveness = perspectiveness,
+                    width = size[1], height = size[2]; kwargs...)  
+    else
+        ax = Axis3(fig[1, 1], aspect = :data, azimuth = azimuth, elevation = elevation, perspectiveness = perspectiveness; kwargs...)
+    end
+    if for_rotation
+        ax.viewmode = :fit
+    end
     GLMakie.scatter!(x, y, z, markersize = markersize, 
                     color = [
                         RGBA(activations[i][1] / gammaBoundsPairs[1][2], 
@@ -430,15 +446,15 @@ function plotConfigurationTube!(::Val{true}, filament, sol; R_outer = filament.R
     end
 
     x, y, z = computeTube(sol, R_outer, Z, Θ; flipped = flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false, transparency = transparency)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = Makie.automatic, ssao = true, invert_normals = true, background = false, transparency = transparency)
 
     R_tube_0 = range(0.0, R_outer(0.0), n);
     x, y, z = computeTubeCap(sol, R_tube_0, Z[1], Θ; flipped = flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false, transparency = transparency)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = Makie.automatic, ssao = true, invert_normals = true, background = false, transparency = transparency)
 
     R_tube_end = range(0.0, R_outer(filament.L), n);
     x, y, z = computeTubeCap(sol, R_tube_end, Z[end], Θ; flipped = flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false, transparency = transparency)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = Makie.automatic, ssao = true, invert_normals = true, background = false, transparency = transparency)
 end
 
 function plotConfigurationTube!(::Val{false}, filament, sol; R_outer = filament.R0, flipped = false, n = 100, color = :black, opacity = 1.0)
@@ -452,14 +468,14 @@ function plotConfigurationTube!(::Val{false}, filament, sol; R_outer = filament.
     end
 
     x, y, z = computeTube(sol, R_outer, Z, Θ; flipped = flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false, transparency = transparency)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = Makie.automatic, ssao = true, invert_normals = true, background = false, transparency = transparency)
 
     R_tube = range(0.0, R_outer, n);
     x, y, z = computeTubeCap(sol, R_tube, Z[1], Θ; flipped = flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false, transparency = transparency)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = Makie.automatic, ssao = true, invert_normals = true, background = false, transparency = transparency)
 
     x, y, z = computeTubeCap(sol, R_tube, Z[end], Θ; flipped = flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = true, ssao = true, invert_normals = true, background = false, transparency = transparency)
+    GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), shading = Makie.automatic, ssao = true, invert_normals = true, background = false, transparency = transparency)
 end
 
 function plotConfigurationTubesSelfWeight!(filament, activation_structure, activations; 
@@ -525,7 +541,9 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{1}, act
     end
 end
 
-function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0}, activation_structure, sol; n = 100, flipped = false, opacity_core = 1.0, opacity_fibers = 1.0, standard_core = true, perturb_deviation = 0.0, colors = [:yellow, :orange, :blue])
+function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0}, activation_structure, sol; 
+        n = 100, flipped = false, opacity_core = 1.0, opacity_fibers = 1.0, 
+        standard_core = true, perturb_deviation = 0.0, colors = [:yellow, :orange, :blue])
     Z = range(0, filament.L, n)
     Θ = range(0, 2 * pi, n) # Flip sign to flip normals
     # set_theme!(background = false)
@@ -603,22 +621,22 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0}, act
             R_range = range(R1_r, R2_r, n);
     
             x, y, z = computeFiberSurface(sol, R2_r, R2_r, α2_r, Z, Θ; flipped = flipped)
-            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, invert_normals = true, ssao = true, background = false)
 
             x, y, z = computeFiberSurface(sol, R1_r, R2_r, α2_r, Z, Θ; flipped = flipped)
-            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, invert_normals = true, ssao = true, background = false)
             
             x, y, z = computeFiberSide(sol, α2_r, Θ[1], Z, R_range; flipped = flipped)
-            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, invert_normals = true, ssao = true, background = false)
 
             x, y, z = computeFiberSide(sol, α2_r, Θ[end], Z, R_range; flipped = flipped)
-            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, invert_normals = true, ssao = true, background = false)
             
             x, y, z = computeFiberCap(sol, α2_r, Z[1], Θ, R_range; flipped = flipped)
-            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, invert_normals = true, ssao = true, background = false)
             
             x, y, z = computeFiberCap(sol, α2_r, Z[end], Θ, R_range; flipped = flipped)
-            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
+            GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, invert_normals = true, ssao = true, background = false)
         end
     end
 end
@@ -669,7 +687,7 @@ function extract_xyz(out, flipped)
     return x, y, z
 end
 
-function plot_muscle!(sol, R1, R2, Θ1, Θ2, Z1, Z2, color, R_factor = 1.0; n = 40, flipped = false, opacity_fibers = 1.0, R1_surface = false, Z1_cap = false, transparency = false)
+function plot_muscle!(sol, R1, R2, Θ1, Θ2, Z1, Z2, color, R_factor = 1.0; n = 40, flipped = false, opacity_fibers = 1.0, R1_surface = false, Z1_cap = false, transparency = false, override_transparent = false)
     Θ = LinRange(Θ1, Θ2, n)
     Z = LinRange(Z1, Z2, n)
 
@@ -690,14 +708,14 @@ function plot_muscle!(sol, R1, R2, Θ1, Θ2, Z1, Z2, color, R_factor = 1.0; n = 
         R = LinRange(R_factor * R1(Z1), R_factor * R2(Z1), n)
         out = [sol(Z1)[1:3] + v * AngleAxis(u, sol(Z1)[10], sol(Z1)[11], sol(Z1)[12]) * [sol(Z1)[4], sol(Z1)[5], sol(Z1)[6]] for u in Θ, v in R]
         x, y, z = extract_xyz(out, flipped)
-        GLMakie.surface!(x, y, z, color = fill((color, 1.0), n, n), ssao = true, invert_normals = false, transparency = false)
+        GLMakie.surface!(x, y, z, color = fill((color, override_transparent ? opacity_fibers : 1.0), n, n), ssao = true, invert_normals = false, transparency = override_transparent)
     end
 
     # Z2 cap
     R = LinRange(R_factor * R1(Z2), R_factor * R2(Z2), n)
     out = [sol(Z2)[1:3] + v * AngleAxis(u, sol(Z2)[10], sol(Z2)[11], sol(Z2)[12]) * [sol(Z2)[4], sol(Z2)[5], sol(Z2)[6]] for u in Θ, v in R]
     x, y, z = extract_xyz(out, flipped)
-    GLMakie.surface!(x, y, z, color = fill((color, 1.0), n, n), ssao = true, invert_normals = true, transparency = false)
+    GLMakie.surface!(x, y, z, color = fill((color, override_transparent ? opacity_fibers : 1.0), n, n), ssao = true, invert_normals = true, transparency = override_transparent)
 
     # Θ1 side
     out = Matrix{SVector{3, Float64}}(undef, n, n);
@@ -732,7 +750,7 @@ function plot_outer_trunk!(trunk::Trunk{T, N}, sol, R_factor = 1.0; n = 40, colo
     GLMakie.surface!(x, y, z, color = fill((color, opacity), n, n), ssao = true, invert_normals = true, transparency = true)
 end
 
-function ActiveFilaments.plot_trunk!(trunk_sim::TrunkFast{T, N}, sol, a; n = 40, colors = [:orange, :magenta, :cyan, :red, :blue], flipped = false, opacity_fibers = 1.0, opacity_trunk = 0.3) where {T, N}
+function ActiveFilaments.plot_trunk!(trunk_sim::TrunkFast{T, N}, sol, a; n = 40, colors = [:orange, :magenta, :cyan, :red, :blue], flipped = false, opacity_fibers = 1.0, opacity_trunk = 0.3, override_transparent = false) where {T, N}
     trunk = trunk_sim.trunk
     R1 = trunk_sim.interpolations.R1
     R2 = trunk_sim.interpolations.R2
@@ -742,9 +760,30 @@ function ActiveFilaments.plot_trunk!(trunk_sim::TrunkFast{T, N}, sol, a; n = 40,
     plot_outer_trunk!(trunk, sol, R_factor; n = n, flipped = flipped, opacity = opacity_trunk)
     for i in 1:T
         for j in 1:5
-            plot_muscle!(sol, R1[j](i), R2[j](i), trunk.Θ1R[i, j], trunk.Θ2R[i, j], trunk.Z1[i], trunk.Z2[i], colors[j], R_factor; n = n, R1_surface = (j >= 4), Z1_cap = (i == 1), flipped = flipped, opacity_fibers = (j < 5 ? opacity_fibers : 1.0), transparency = (j < 5))
+            opacity_f = override_transparent ? opacity_fibers : (j < 5 ? opacity_fibers : 1.0)
+            transp = override_transparent ? true : (j < 5)
+            plot_muscle!(sol, R1[j](i), R2[j](i), trunk.Θ1R[i, j], trunk.Θ2R[i, j], trunk.Z1[i], trunk.Z2[i], colors[j], R_factor; n = n, R1_surface = (j >= 4), Z1_cap = (i == 1), flipped = flipped, opacity_fibers = opacity_f, transparency = transp, override_transparent = override_transparent)
 
-            plot_muscle!(sol, R1[j](i), R2[j](i), trunk.Θ1L[i, j], trunk.Θ2L[i, j], trunk.Z1[i], trunk.Z2[i], colors[j], R_factor; n = n, R1_surface = (j >= 4), Z1_cap = (i == 1), flipped = flipped, opacity_fibers = (j < 5 ? opacity_fibers : 1.0), transparency = (j < 5)) 
+            plot_muscle!(sol, R1[j](i), R2[j](i), trunk.Θ1L[i, j], trunk.Θ2L[i, j], trunk.Z1[i], trunk.Z2[i], colors[j], R_factor; n = n, R1_surface = (j >= 4), Z1_cap = (i == 1), flipped = flipped, opacity_fibers = opacity_f, transparency = transp, override_transparent = override_transparent) 
+        end
+    end
+end
+
+function ActiveFilaments.plot_trunk_isolated!(trunk_sim::TrunkFast{T, N}, sol, a, muscle_indices, colors; n = 40, flipped = false, opacity_fibers = 1.0, opacity_trunk = 0.3) where {T, N}
+    trunk = trunk_sim.trunk
+    R1 = trunk_sim.interpolations.R1
+    R2 = trunk_sim.interpolations.R2
+
+    @time R_factor = compute_R_factor_current(trunk_sim.trunk, sol)
+    plot_outer_trunk!(trunk, sol, R_factor; n = n, flipped = flipped, opacity = opacity_trunk)
+    for m in muscle_indices
+        opacity_f = opacity_fibers
+        transp = false
+
+        if m[3] == 1
+            plot_muscle!(sol, R1[m[2]](m[1]), R2[m[2]](m[1]), trunk.Θ1R[m[1], m[2]], trunk.Θ2R[m[1], m[2]], trunk.Z1[m[1]], trunk.Z2[m[1]], colors[m[1], m[2], m[3]], R_factor; n = n, R1_surface = true, Z1_cap = (m[1] == 1), flipped = flipped, opacity_fibers = opacity_f, transparency = transp, override_transparent = false)
+        else
+            plot_muscle!(sol, R1[m[2]](m[1]), R2[m[2]](m[1]), trunk.Θ1L[m[1], m[2]], trunk.Θ2L[m[1], m[2]], trunk.Z1[m[1]], trunk.Z2[m[1]], colors[m[1], m[2], m[3]], R_factor; n = n, R1_surface = true, Z1_cap = (m[1] == 1), flipped = flipped, opacity_fibers = opacity_f, transparency = transp, override_transparent = false) 
         end
     end
 end
