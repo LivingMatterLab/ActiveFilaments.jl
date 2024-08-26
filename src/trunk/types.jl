@@ -28,6 +28,14 @@ struct Sphere
     c::SVector{3, Float64}
 end
 
+struct SphereJoint
+    sphere::Sphere
+    sD_hat::SVector{3, Float64}
+    sdD_hat_1::SVector{3, Float64}
+    sdD_hat_2::SVector{3, Float64}
+    sdD_hat_3::SVector{3, Float64}
+end
+
 @with_kw struct Trunk{T, N}
     "Length of the trunk"
     L::Float64 = 1.0
@@ -209,18 +217,42 @@ end
     "Radial muscle contribution to bending"
     radial_muscle_bending::Bool = false
 
-    "Default clamping condition"
+    "Default clamping location"
     r0::SVector{3, Float64} = @SVector [0.0, 0.0, 0.0]
-    d10::SVector{3, Float64} = @SVector [1.0, 0.0, 0.0]
-    d20::SVector{3, Float64} = @SVector [0.0, 1.0, 0.0]
-    d30::SVector{3, Float64} = @SVector [0.0, 0.0, 1.0]
+
+    "Trunk 'joint' sphere"
+    sphere_r::Float64
+    xi_1::Float64 = 0.0
+    xi_2::Float64 = pi / 2
+    xi_d::Float64
+    sphere_joint::SphereJoint = SphereJoint(
+            Sphere(sphere_r, r0 - AngleAxis(xi_2, 0.0, 1.0, 0.0) * AngleAxis(xi_1, 1.0, 0.0, 0.0) * [0.0, 0.0, 1.0] * sphere_r),
+            AngleAxis(xi_2, 0.0, 1.0, 0.0) * AngleAxis(xi_1, 1.0, 0.0, 0.0) * [0.0, 0.0, 1.0],
+            AngleAxis(xi_d, 0.0, 1.0, 0.0) * AngleAxis(xi_1, 1.0, 0.0, 0.0) * [1.0, 0.0, 0.0],
+            AngleAxis(xi_d, 0.0, 1.0, 0.0) * AngleAxis(xi_1, 1.0, 0.0, 0.0) * [0.0, 1.0, 0.0],
+            AngleAxis(xi_d, 0.0, 1.0, 0.0) * AngleAxis(xi_1, 1.0, 0.0, 0.0) * [0.0, 0.0, 1.0]
+        )
+
+    "Default clamping orientation"
+    d10::SVector{3, Float64} = sphere_joint.sdD_hat_1
+    d20::SVector{3, Float64} = sphere_joint.sdD_hat_2
+    d30::SVector{3, Float64} = sphere_joint.sdD_hat_3
     clamping_condition::ClampingCondition = ClampingCondition(r0, d10, d20, d30)
     clamping_condition_unrolled::SVector{12, Float64} = 
         [clamping_condition.r0..., clamping_condition.d10..., clamping_condition.d20..., clamping_condition.d30...]
 
-    "Trunk 'joint' sphere"
-    sphere_r::Float64
-    sphere::Sphere = Sphere(sphere_r, clamping_condition.r0 - clamping_condition.d30 * sphere_r)
+    # "Default clamping condition"
+    # r0::SVector{3, Float64} = @SVector [0.0, 0.0, 0.0]
+    # d10::SVector{3, Float64} = @SVector [1.0, 0.0, 0.0]
+    # d20::SVector{3, Float64} = @SVector [0.0, 1.0, 0.0]
+    # d30::SVector{3, Float64} = @SVector [0.0, 0.0, 1.0]
+    # clamping_condition::ClampingCondition = ClampingCondition(r0, d10, d20, d30)
+    # clamping_condition_unrolled::SVector{12, Float64} = 
+    #     [clamping_condition.r0..., clamping_condition.d10..., clamping_condition.d20..., clamping_condition.d30...]
+
+    # "Trunk 'joint' sphere"
+    # sphere_r::Float64
+    # sphere::Sphere = Sphere(sphere_r, clamping_condition.r0 - clamping_condition.d30 * sphere_r)
 end
 
 @with_kw struct TrunkFast{T, N}

@@ -254,7 +254,7 @@ function compute_p(trunk::Trunk{T, N}) where {T, N}
     p_ivo_R = @SVector [SMatrix{T, N, Float64}(reduce(vcat, [transpose(E * δ_ivo_R[Z_index][i] ./ K[i][Z_index, :]) for Z_index in 1:T])) for i in 1:4]
     p_ivo_L = @SVector [SMatrix{T, N, Float64}(reduce(vcat, [transpose(E * δ_ivo_L[Z_index][i] ./ K[i][Z_index, :]) for Z_index in 1:T])) for i in 1:4]
     p_dr = @SVector [SMatrix{T, N, Float64}(reduce(vcat, [transpose(E * δ_dr[Z_index][i] ./ K[i][Z_index, :]) for Z_index in 1:T])) for i in 1:4]
-    p_vr = @SVector [SMatrix{T, N, Float64}(reduce(vcat, [transpose(E * δ_dr[Z_index][i] ./ K[i][Z_index, :]) for Z_index in 1:T])) for i in 1:4]
+    p_vr = @SVector [SMatrix{T, N, Float64}(reduce(vcat, [transpose(E * δ_vr[Z_index][i] ./ K[i][Z_index, :]) for Z_index in 1:T])) for i in 1:4]
     
     # p_dl = MVector{3, MMatrix{T, N, Float64}}([reduce(hcat, E * δ_dl[Z_index][i] ./ K[i][Z_index, :]) for Z_index in 1:T] )
     # p_ovo_R = MVector{3, MMatrix{T, N, Float64}}(undef)
@@ -311,7 +311,7 @@ function compute_uhat_interpolations(trunk::Trunk{T, N}, u_hat_array::SArray) wh
     u_hat
 end
 
-# Assumes constant ζ_hat in each segment
+# Assumes incompressibility and constant ζ_hat in each segment
 function compute_R_factor(trunk::Trunk{T, N}, ζ_hat_array::SMatrix{T, N, Float64}) where {T, N}
     R_factor = sqrt(trunk.L / sum([ζ_hat_array[i, 1] * (trunk.Z2[i] - trunk.Z1[i]) for i in 1:T]))
     return R_factor
@@ -514,7 +514,12 @@ function self_weight_wrap_trunk_de!(du, u,
     du[10] = ζ_hat * (u2 * u[4] - u1 * u[7]);
     du[11] = ζ_hat * (u2 * u[5] - u1 * u[8]);
     du[12] = ζ_hat * (u2 * u[6] - u1 * u[9]);
-    du[13] = ζ_hat * (u3 * u[14] - u2 * u[15]) + ζ * n2 + l1;
+    # The l1, l2, and l3 do not have a ζ_hat factor because
+    # they are already couples per unit initial length;
+    # also the case for a distributed body couple due to off-center
+    # loading (not considered in this function)
+    # [see Moulton et al. Morphoelastic Rods: Part 1]
+    du[13] = ζ_hat * (u3 * u[14] - u2 * u[15]) + ζ * n2 + l1; 
     du[14] = ζ_hat * (u1 * u[15] - u3 * u[13]) - ζ * n1 + l2;
     du[15] = ζ_hat * (u2 * u[13] - u1 * u[14]) + l3;
 end
@@ -573,7 +578,7 @@ end
 
 function build_trunk_bvp(trunk::TrunkFast{T, N}, γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}} = ((@SMatrix zeros(3, 5)), (@SMatrix zeros(3, 5)));
         bcs = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
-        m0::Vector{Float64} = [0.0, 0.0, 0.0], uInit::Vector{Float64} = [bcs..., m0[1], m0[2], m0[3]],
+        m0::Vector{Float64} = [0.0, 0.0, 0.0], uInit::Vector{<:Any} = [bcs..., m0[1], m0[2], m0[3]],
         g::Float64 = -9.8, F::SVector{3, Float64} = SVector{3, Float64}([0.0, 0.0, 0.0])) where {T, N}
     activation = ActivatedTrunkQuantities{T, N}(trunkFast = trunk, γ = γ)
     

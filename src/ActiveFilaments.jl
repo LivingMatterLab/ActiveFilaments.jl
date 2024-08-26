@@ -42,9 +42,9 @@ using ForwardDiff;
 # using ReverseDiff;
 # using ModelingToolkit;
 using OptimizationNLopt;
-# using OptimizationBBO;
+using OptimizationBBO;
 # using OptimizationPRIMA;
-# using OptimizationNOMAD;
+using OptimizationNOMAD;
 using ODEInterfaceDiffEq;
 
 import Base.copy
@@ -118,7 +118,8 @@ export
     plotConfigurationTubesSelfWeight!,
 
     plot_trunk!,
-    plot_trunk_exploded!
+    plot_trunk_exploded!,
+    plot_trunk_isolated!
 
 # Main scripts
 include("types/types.jl");

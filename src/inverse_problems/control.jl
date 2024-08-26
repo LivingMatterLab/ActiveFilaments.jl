@@ -300,26 +300,48 @@ function build_distance_function(
     end)
 end
 
-function rotate_bc(trunk::TrunkFast{T, N}, θ::Tuple{Float64, Float64}) where {T, N}
-    rot1 = AngleAxis(θ[1], 1.0, 0.0, 0.0)
-    rot2 = AngleAxis(θ[2], 0.0, 1.0, 0.0)
+# function rotate_bc(trunk::TrunkFast{T, N}, θ::Tuple{Float64, Float64}) where {T, N}
+#     rot1 = AngleAxis(θ[1], 1.0, 0.0, 0.0)
+#     rot2 = AngleAxis(θ[2], 0.0, 1.0, 0.0)
     
+#     cond = trunk.trunk.clamping_condition
+#     sphere = trunk.trunk.sphere
+
+#     # bc = transpose(hcat(cond.d10, cond.d20, cond.d30))
+
+#     # bc = rot2 * rot1 * bc
+
+#     # r0 = sphere.c + bc[3, :] * sphere.r
+
+#     # bc_v = vcat(r0, reshape(transpose(bc), 9))
+
+#     bc = hcat(cond.d10, cond.d20, cond.d30)
+
+#     bc = rot2 * rot1 * bc
+
+#     r0 = sphere.c + bc[:, 3] * sphere.r
+
+#     bc_v = SVector{12, Float64}(vcat(r0, reshape(bc, 9)))
+
+#     bc_v
+# end
+
+function rotate_bc(trunk::TrunkFast{T, N}, θ::Tuple{Float64, Float64}) where {T, N}
+    # rot1 = AngleAxis(θ[1], 1.0, 0.0, 0.0)
+    rot1 = AngleAxis(θ[1], 0.0, 0.0, 1.0) # Changed to rotation around Z, which makes more sense
+    rot2 = AngleAxis(θ[2], 0.0, 1.0, 0.0)
+    # rot = rot2 * rot1
+    rot = rot1 * rot2 # Makes sure that the rotation is intrinsic and not extrinsic (1 * 2 instead of 2 * 1)
+
     cond = trunk.trunk.clamping_condition
-    sphere = trunk.trunk.sphere
-
-    # bc = transpose(hcat(cond.d10, cond.d20, cond.d30))
-
-    # bc = rot2 * rot1 * bc
-
-    # r0 = sphere.c + bc[3, :] * sphere.r
-
-    # bc_v = vcat(r0, reshape(transpose(bc), 9))
+    sphere_joint = trunk.trunk.sphere_joint
+    sphere = sphere_joint.sphere
 
     bc = hcat(cond.d10, cond.d20, cond.d30)
 
-    bc = rot2 * rot1 * bc
+    bc = rot * bc
 
-    r0 = sphere.c + bc[:, 3] * sphere.r
+    r0 = sphere.c + rot * sphere_joint.sD_hat * sphere.r
 
     bc_v = SVector{12, Float64}(vcat(r0, reshape(bc, 9)))
 
@@ -361,6 +383,7 @@ function optimize_activation(
     # sol = solve(prob, NLopt.G_MLSL(), local_method = NLopt.LN_SBPLX(), maxtime = 30.0)
 
     println("Optimization start")
+
     if local_min
         sol = solve(prob, NLopt.LN_SBPLX(), maxtime = maxtime)
     else
@@ -396,13 +419,16 @@ function optimize_activation(
         ivp::ODEProblem, args...; 
         x0::Union{SVector{30, Float64}, Vector{Float64}} = (@SVector zeros(30)), 
         u0 = nothing, 
-        maxtime = 60.0, 
+        maxtime = 60.0,
+        local_min = false,
+        alt_method = false,
+        ζ_hat_high = 1.35,
         kwargs...) where {T, N}
     if !isnothing(u0)
         ivp = remake(ivp; u0 = u0)
     end
 
-    f = build_distance_function(control_objective, trunk, ivp, args...; kwargs...)
+    f = build_distance_function(control_objective, trunk, ivp, args...; ζ_hat_high = ζ_hat_high, kwargs...)
     
     println(f(x0, nothing))
 
@@ -413,7 +439,18 @@ function optimize_activation(
 
     # sol = solve(prob, NLopt.GN_DIRECT(), maxtime = maxtime)
 
-    sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_NELDERMEAD(), maxtime = maxtime)
+    if alt_method
+        sol = solve(prob, OptimizationBBO.BBO_adaptive_de_rand_1_bin_radiuslimited(), maxtime = maxtime; NThreads=Threads.nthreads()-1)
+        # sol = solve(prob, OptimizationNOMAD.NOMADOpt(), maxtime = maxtime)
+    else
+        if (local_min)
+            sol = solve(prob, NLopt.LN_SBPLX(), maxtime = maxtime)
+        else
+            sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_NELDERMEAD(), maxtime = maxtime)
+            # sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_SBPLX(), maxtime = maxtime)
+        end
+    end
+    
 
     # sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_SBPLX(), maxtime = maxtime)
 
@@ -427,7 +464,7 @@ function optimize_activation(
 
     θ = (sol[29], sol[30])
     new_bcs = SVector{12, Float64}(rotate_bc(trunk, θ))
-    return sol[1:28], γ, θ, new_bcs
+    return sol[1:28], γ, θ, new_bcs, sol.objective
 end
 
 
