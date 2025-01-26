@@ -25,10 +25,10 @@ struct ConfigurationControlObjective{P<:DataType} <: AbstractControlObjective
     propertyTypes::Vector{P}
     weights::Vector{<:SArray}
     ConfigurationControlObjective(
-        args::Vector{<:SArray}, 
+        args::Vector{<:SArray},
         properties::Vector{<:Any},
-        weights::Vector{<:SArray}; 
-        propertyTypes::Vector{P} = Vector{DataType}([r])
-        ) where {P <: DataType} = 
-            new{P}(args, properties, propertyTypes, weights);
+        weights::Vector{<:SArray};
+        propertyTypes::Vector{P} = Vector{DataType}([r]),
+    ) where {P<:DataType} =
+        new{P}(args, properties, propertyTypes, weights)
 end

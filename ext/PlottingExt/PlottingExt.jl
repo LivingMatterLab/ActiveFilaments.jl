@@ -1,5 +1,6 @@
 ### The plotting module extension
 module PlottingExt
+
 using ActiveFilaments
 using ColorSchemes
 using CairoMakie

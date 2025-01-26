@@ -82,7 +82,7 @@ $(TYPEDFIELDS)
 """
 struct FiberArchitecture <: AbstractFiberArchitecture
     "Helical angle" # Test Union efficiency
-    α2::Union{AbstractFloat, PiecewiseStructure}
+    α2::Union{AbstractFloat,PiecewiseStructure}
 end
 
 """
@@ -118,7 +118,8 @@ mutable struct Ring{T} <: AbstractRing
 end
 
 # Convenience constructor
-Ring(mechanicalProperties, geometry::Geometry{T}, fiberArchitecture) where {T} = Ring{T}(mechanicalProperties, geometry, fiberArchitecture);
+Ring(mechanicalProperties, geometry::Geometry{T}, fiberArchitecture) where {T} =
+    Ring{T}(mechanicalProperties, geometry, fiberArchitecture);
 
 """
     $(TYPEDEF)
@@ -175,7 +176,7 @@ end
 
 Creates a filament stiffness definition `FilamentStiffnessGPU` using an array of stiffness coefficients.
 """
-FilamentStiffnessGPU(K::SVector{4, Float32}) = FilamentStiffnessGPU(K[1], K[2], K[3], K[4]);
+FilamentStiffnessGPU(K::SVector{4,Float32}) = FilamentStiffnessGPU(K[1], K[2], K[3], K[4]);
 
 """
     $(TYPEDEF)
@@ -200,9 +201,12 @@ end
 
 Creates a filament stiffness definition `FilamentStiffness` using an array of stiffness coefficients.
 """
-FilamentStiffness(K::SVector{4, Float64}) = FilamentStiffness{Float64}(K[1], K[2], K[3], K[4]);
-FilamentStiffness(K::SVector{4, Vector{Float64}}) = FilamentStiffness{Vector{Float64}}(K[1], K[2], K[3], K[4]);
-FilamentStiffness(K::SVector{4, T}) where T<:AbstractInterpolation = FilamentStiffness{T}(K[1], K[2], K[3], K[4]);
+FilamentStiffness(K::SVector{4,Float64}) =
+    FilamentStiffness{Float64}(K[1], K[2], K[3], K[4]);
+FilamentStiffness(K::SVector{4,Vector{Float64}}) =
+    FilamentStiffness{Vector{Float64}}(K[1], K[2], K[3], K[4]);
+FilamentStiffness(K::SVector{4,T}) where {T<:AbstractInterpolation} =
+    FilamentStiffness{T}(K[1], K[2], K[3], K[4]);
 
 """
     $(TYPEDEF)
@@ -212,9 +216,9 @@ Auxiliary properties structure used to speed up configuration computations.
 $(TYPEDFIELDS)
 """
 struct AuxiliaryProperties{A}
-    ρlin0::Union{Function, Float64}
-    ρlin0Int::Union{Expr, Function}
-    stiffness::SVector{4, A}
+    ρlin0::Union{Function,Float64}
+    ρlin0Int::Union{Expr,Function}
+    stiffness::SVector{4,A}
 end
 
 """
@@ -236,7 +240,8 @@ $(TYPEDFIELDS)
     "Outer radius of the filament"
     R0::Float32 = rings[end].geometry.R2
     "Inner tube of the filament"
-    innerTube::InnerTubeGPU = InnerTubeGPU(rings[1].mechanicalProperties, GeometryGPU(0, rings[1].geometry.R1))
+    innerTube::InnerTubeGPU =
+        InnerTubeGPU(rings[1].mechanicalProperties, GeometryGPU(0, rings[1].geometry.R1))
     "Stiffness definition"
     stiffness::FilamentStiffnessGPU = FilamentStiffnessGPU(computeK(rings, innerTube))
     "Volumetric density"
@@ -266,7 +271,7 @@ effectively omit the instability anyway.
 
 $(TYPEDFIELDS)
 """
-@with_kw struct AFilament{V, M, A}
+@with_kw struct AFilament{V,M,A}
     "Length of the filament"
     L::Float64 = 1.0
     "Material coordinate"
@@ -276,17 +281,22 @@ $(TYPEDFIELDS)
     "Tapered designation"
     tapered::Bool = (phi2 != 0)
     "Array of filament rings"
-    rings::Vector{Ring{T}} where T
+    rings::Vector{Ring{T}} where {T}
     "Outer radius of the filament"
     R0 = rings[end].geometry.R2
     "Inner tube of the filament"
-    innerTube::InnerTube = InnerTube(rings[1].mechanicalProperties, Geometry(R1 = 0.0, R2 = rings[1].geometry.R1, phi2 = phi2))
+    innerTube::InnerTube = InnerTube(
+        rings[1].mechanicalProperties,
+        Geometry(R1 = 0.0, R2 = rings[1].geometry.R1, phi2 = phi2),
+    )
     "Stiffness definition"
     stiffness::FilamentStiffness = FilamentStiffness(computeK(rings, innerTube))
     "Volumetric density"
     ρvol::Float64
     "Total mass (if tapered, assumes linear tapering)"
-    m::Float64 = tapered ? ρvol * pi / 3.0 * L * (R0[1]^2 + R0[1] * R0[end] + R0[end]^2) : ρvol * pi * R0.^2 * L
+    m::Float64 =
+        tapered ? ρvol * pi / 3.0 * L * (R0[1]^2 + R0[1] * R0[end] + R0[end]^2) :
+        ρvol * pi * R0 .^ 2 * L
     "Auxiliary properties" # Double check if the Union here doesn't slow anything down!
     auxiliary::AuxiliaryProperties{A}
 end
@@ -298,73 +308,158 @@ Outer constructor for AFilament.
 
 Two versions: either provide rings0 with R10, R20 as numbers, rings with R1 and R2 as arrays.
 """
-function AFilament(rings0::Vector{Ring{T}} where T<:AbstractFloat; 
-                    N::Integer = 32, L::Float64 = 1.0, phi2::Float64 = 0.0, ρvol::Float64 = 1000.0,
-                    innerTube::InnerTube = InnerTube(rings0[1].mechanicalProperties, Geometry(R1 = 0.0, R2 = rings0[1].geometry.R1, phi2 = phi2)),
-                    interp::Function = cubic_spline_interpolation,
-                    expression = Val{false})
+function AFilament(rings0::Vector{Ring{T}} where {T<:AbstractFloat};
+    N::Integer = 32, L::Float64 = 1.0, phi2::Float64 = 0.0, ρvol::Float64 = 1000.0,
+    innerTube::InnerTube = InnerTube(
+        rings0[1].mechanicalProperties,
+        Geometry(R1 = 0.0, R2 = rings0[1].geometry.R1, phi2 = phi2),
+    ),
+    interp::Function = cubic_spline_interpolation,
+    expression = Val{false})
     Z = LinRange(0.0, L, N)
-    @variables Zs;
+    @variables Zs
 
-    R0 = rings0[end].geometry.R2;
+    R0 = rings0[end].geometry.R2
     if (phi2 != 0)
-        f = 1 .- Z / R0 * tan(phi2);
-        M = length(rings0);
-        phi2_rings = Vector{Float64}(undef, M);
-        rings = Vector{Ring{typeof(Z)}}(undef, M);
-        for i in 1:M
-            phi2_ring = atan(rings0[i].geometry.R2 / R0 * tan(phi2));
-            rings[i] = Ring(rings0[i].mechanicalProperties, 
-                Geometry(rings0[i].geometry.R1 * f, rings0[i].geometry.R2 * f; phi2 = phi2_ring), 
-                rings0[i].fiberArchitecture);
-            phi2_rings[i] = phi2_ring;
+        f = 1 .- Z / R0 * tan(phi2)
+        M = length(rings0)
+        phi2_rings = Vector{Float64}(undef, M)
+        rings = Vector{Ring{typeof(Z)}}(undef, M)
+        for i = 1:M
+            phi2_ring = atan(rings0[i].geometry.R2 / R0 * tan(phi2))
+            rings[i] = Ring(rings0[i].mechanicalProperties,
+                Geometry(
+                    rings0[i].geometry.R1 * f,
+                    rings0[i].geometry.R2 * f;
+                    phi2 = phi2_ring,
+                ),
+                rings0[i].fiberArchitecture)
+            phi2_rings[i] = phi2_ring
         end
-        innerTube = InnerTube(innerTube.mechanicalProperties, Geometry(LinRange(0.0, 0.0, N), rings[1].geometry.R1; phi2 = atan(rings0[1].geometry.R1 / R0 * tan(phi2))))
-        
-        R0 = rings[end].geometry.R2;
+        innerTube = InnerTube(
+            innerTube.mechanicalProperties,
+            Geometry(
+                LinRange(0.0, 0.0, N),
+                rings[1].geometry.R1;
+                phi2 = atan(rings0[1].geometry.R1 / R0 * tan(phi2)),
+            ),
+        )
+
+        R0 = rings[end].geometry.R2
 
         # expression = Val{false} prevents worldage issues when exporting with JLD2 (no "expression = Val{false}" causes the runtime generated function to not be
         # save properly in JLD2). BUT it's possible that this needs to be changed in some cases
-        ρlin0 = eval(build_function(simplify(pi * ρvol * (R0[1] - Zs * tan(phi2))^2), Zs, expression = expression));
-        ρlin0Int = eval(build_function(simplify(pi / (3.0 * L^2) * ρvol * ((L - Zs)^3 * R0[1]^2 + (L - Zs)^2 * (L + 2 * Zs) * R0[1] * R0[end] + (L^3 - Zs^3) * R0[end]^2)), Zs, expression = expression))
+        ρlin0 = eval(
+            build_function(
+                simplify(pi * ρvol * (R0[1] - Zs * tan(phi2))^2),
+                Zs,
+                expression = expression,
+            ),
+        )
+        ρlin0Int = eval(
+            build_function(
+                simplify(
+                    pi / (3.0 * L^2) * ρvol *
+                    (
+                        (L - Zs)^3 * R0[1]^2 +
+                        (L - Zs)^2 * (L + 2 * Zs) * R0[1] * R0[end] +
+                        (L^3 - Zs^3) * R0[end]^2
+                    ),
+                ),
+                Zs,
+                expression = expression,
+            ),
+        )
     else
-        rings = rings0;
+        rings = rings0
 
-        ρlin0 = pi * ρvol * R0^2;
+        ρlin0 = pi * ρvol * R0^2
 
         # See above comment about worldage
-        ρlin0Int = eval(build_function(ρlin0 * (L - Zs), Zs, expression = expression));
+        ρlin0Int = eval(build_function(ρlin0 * (L - Zs), Zs, expression = expression))
     end
 
     stiffness = FilamentStiffness(computeK(rings, innerTube))
-    stiffness_aux = phi2 != 0 ? SVector{4}([interp(Z, stiffness.K0), interp(Z, stiffness.K1), interp(Z, stiffness.K2), interp(Z, stiffness.K3)]) : 
-                                SVector{4, Float64}([stiffness.K0, stiffness.K1, stiffness.K2, stiffness.K3]);
+    stiffness_aux =
+        phi2 != 0 ?
+        SVector{4}([
+            interp(Z, stiffness.K0),
+            interp(Z, stiffness.K1),
+            interp(Z, stiffness.K2),
+            interp(Z, stiffness.K3),
+        ]) :
+        SVector{4,Float64}([stiffness.K0, stiffness.K1, stiffness.K2, stiffness.K3])
     auxProp = AuxiliaryProperties(ρlin0, ρlin0Int, stiffness_aux)
-    AFilament{phi2 != 0 ? 1 : 0, length(rings), typeof(auxProp).parameters[1]}(Z = Z, L = L, rings = rings, innerTube = innerTube, ρvol = ρvol, phi2 = phi2, auxiliary = auxProp);
+    AFilament{phi2 != 0 ? 1 : 0,length(rings),typeof(auxProp).parameters[1]}(
+        Z = Z,
+        L = L,
+        rings = rings,
+        innerTube = innerTube,
+        ρvol = ρvol,
+        phi2 = phi2,
+        auxiliary = auxProp,
+    )
 end
 
-function AFilament(rings::Vector{Ring{T}} where T<:AbstractVector; 
-                    N::Integer = 32, L::Float64 = 1.0, phi2 = 0.0, ρvol = 1000.0, 
-                    innerTube::InnerTube = InnerTube(rings0[1].mechanicalProperties, Geometry(R1 = 0.0, R2 = rings0[1].geometry.R1, phi2 = phi2)),
-                    interp::Function = cubic_spline_interpolation)
-    Z = LinRange(0.0, L, N);
-    @variables Zs;
+function AFilament(rings::Vector{Ring{T}} where {T<:AbstractVector};
+    N::Integer = 32, L::Float64 = 1.0, phi2 = 0.0, ρvol = 1000.0,
+    innerTube::InnerTube = InnerTube(
+        rings0[1].mechanicalProperties,
+        Geometry(R1 = 0.0, R2 = rings0[1].geometry.R1, phi2 = phi2),
+    ),
+    interp::Function = cubic_spline_interpolation)
+    Z = LinRange(0.0, L, N)
+    @variables Zs
 
-    R0 = rings0[end].geometry.R2;
+    R0 = rings0[end].geometry.R2
     if (phi2 != 0)
         # See other comment about worldage
-        ρlin0 = eval(build_function(simplify(pi * ρvol * (R0[1] - Zs * tan(phi2))^2), Zs, expression = Val{false}));
-        ρlin0Int = eval(build_function(simplify(pi / (3.0 * L^2) * ρvol * ((L - Zs)^3 * R0[1]^2 + (L - Zs)^2 * (L + 2 * Zs) * R0[1] * R0[end] + (L^3 - Zs^3) * R0[end]^2)), Zs, expression = Val{false}))
+        ρlin0 = eval(
+            build_function(
+                simplify(pi * ρvol * (R0[1] - Zs * tan(phi2))^2),
+                Zs,
+                expression = Val{false},
+            ),
+        )
+        ρlin0Int = eval(
+            build_function(
+                simplify(
+                    pi / (3.0 * L^2) * ρvol *
+                    (
+                        (L - Zs)^3 * R0[1]^2 +
+                        (L - Zs)^2 * (L + 2 * Zs) * R0[1] * R0[end] +
+                        (L^3 - Zs^3) * R0[end]^2
+                    ),
+                ),
+                Zs,
+                expression = Val{false},
+            ),
+        )
     else
         # See other comment about worldage
-        ρlin0 = pi * ρvol * R0[1]^2;
-        ρlin0Int = eval(build_function(ρlin0 * (L - Zs), Zs, expression = Val{false}));
+        ρlin0 = pi * ρvol * R0[1]^2
+        ρlin0Int = eval(build_function(ρlin0 * (L - Zs), Zs, expression = Val{false}))
     end
 
     stiffness = FilamentStiffness(computeK(rings, innerTube))
-    stiffness_aux = phi2 != 0 ? SVector{4}([interp(Z, stiffness.K0), interp(Z, stiffness.K1), interp(Z, stiffness.K2), interp(Z, stiffness.K3)]) : 
-                                SVector{4, Float64}([stiffness.K0, stiffness.K1, stiffness.K2, stiffness.K3]);
+    stiffness_aux =
+        phi2 != 0 ?
+        SVector{4}([
+            interp(Z, stiffness.K0),
+            interp(Z, stiffness.K1),
+            interp(Z, stiffness.K2),
+            interp(Z, stiffness.K3),
+        ]) :
+        SVector{4,Float64}([stiffness.K0, stiffness.K1, stiffness.K2, stiffness.K3])
     auxProp = AuxiliaryProperties(ρlin0, ρlin0Int, stiffness_aux)
-    AFilament{phi2 != 0 ? 1 : 0, length(rings), typeof(auxProp).parameters[1]}(Z = Z, L = L, rings = rings, innerTube = innerTube, ρvol = ρvol, phi2 = phi2, auxiliary = auxProp);
+    AFilament{phi2 != 0 ? 1 : 0,length(rings),typeof(auxProp).parameters[1]}(
+        Z = Z,
+        L = L,
+        rings = rings,
+        innerTube = innerTube,
+        ρvol = ρvol,
+        phi2 = phi2,
+        auxiliary = auxProp,
+    )
 end
 #endregion ===========================

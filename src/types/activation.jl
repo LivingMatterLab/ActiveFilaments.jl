@@ -61,8 +61,10 @@ Fourier coefficients of fiber activation (symbolic or numeric computation).
 $(TYPEDFIELDS)
 """
 struct ActivationFourier{T} <: AbstractActivationPiecewise
+    # Assumes constant a0 (this is the case if the number of fibers, 
+    # σ etc. doesn't change with Z); a0 is still constant if α2 or θ0 changes
     "Coefficient 1"
-    a0::Float64 # Assumes constant a0 (this is the case if the number of fibers, σ etc. doesn't change with Z); a0 is still constant if α2 or θ0 changes
+    a0::Float64 
     "Coefficient 2"
     a1::T
     "Coefficient 3"

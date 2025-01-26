@@ -60,7 +60,7 @@ Precomputed quantity storage for all rings in a filament (symbolic or numeric co
 
 $(TYPEDFIELDS)
 """
-struct PrecomputedQuantities{U, T} <: AbstractPrecomputedQuantities
+struct PrecomputedQuantities{U,T} <: AbstractPrecomputedQuantities
     "Vector of Prefactors for the extensions and curvatures"
     uPrefactors::Vector{Prefactors{T}}
     "Vector of phases phi"

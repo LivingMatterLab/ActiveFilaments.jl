@@ -12,7 +12,7 @@ struct PiecewiseStructure{T} # Rename to PiecewiseFunction <: PiecewiseStructure
     "Expressions (symbolic or numeric) in each of the piecewise ranges"
     expressions::Vector{T}
     "Array of piecewise ranges (2-element vectors or tuples) for the argument"
-    piecewiseRanges
+    piecewiseRanges::Any
 end
 
 """
@@ -21,9 +21,9 @@ end
 Addition operator overload for PiecewiseStructure + PiecewiseStructure.
 """
 function Base.:+(x::PiecewiseStructure, y::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for (expression_x, expression_y) in zip(x.expressions, y.expressions)
-        push!(expressions, expression_x + expression_y);
+        push!(expressions, expression_x + expression_y)
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -35,9 +35,9 @@ end
 Addition operator overload for Number + PiecewiseStructure.
 """
 function Base.:+(x::Number, y::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for expression in y.expressions
-        push!(expressions, x + expression);
+        push!(expressions, x + expression)
     end
     PiecewiseStructure(expressions, y.piecewiseRanges)
 end
@@ -48,9 +48,9 @@ end
 Addition operator overload for PiecewiseStructure + Number.
 """
 function Base.:+(x::PiecewiseStructure, y::Number)
-    expressions = [];
+    expressions = []
     for expression in x.expressions
-        push!(expressions, y + expression);
+        push!(expressions, y + expression)
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -61,9 +61,9 @@ end
 Negation operator overload for PiecewiseStructure.
 """
 function Base.:-(x::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for expression in x.expressions
-        push!(expressions, -expression);
+        push!(expressions, -expression)
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -74,9 +74,9 @@ end
 Subtraction operator overload for PiecewiseStructure - PiecewiseStructure.
 """
 function Base.:-(x::PiecewiseStructure, y::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for (expression_x, expression_y) in zip(x.expressions, y.expressions)
-        push!(expressions, expression_x - expression_y);
+        push!(expressions, expression_x - expression_y)
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -89,9 +89,9 @@ The PiecewiseStructure is subtracted from number in each of
 `y.piecewiseRanges` to produce another PiecewiseStructure.
 """
 function Base.:-(x::Number, y::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for expression in y.expressions
-        push!(expressions, x - expression);
+        push!(expressions, x - expression)
     end
     PiecewiseStructure(expressions, y.piecewiseRanges)
 end
@@ -104,9 +104,9 @@ The Number is subtracted from the PiecewiseStructure in each of
 `x.piecewiseRanges` to produce another PiecewiseStructure.
 """
 function Base.:-(x::PiecewiseStructure, y::Number)
-    expressions = [];
+    expressions = []
     for expression in x.expressions
-        push!(expressions, expression - y);
+        push!(expressions, expression - y)
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -117,9 +117,9 @@ end
 Multiplication operator overload for PiecewiseStructure * PiecewiseStructure.
 """
 function Base.:*(x::PiecewiseStructure, y::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for (expression_x, expression_y) in zip(x.expressions, y.expressions)
-        push!(expressions, expression_x * expression_y);
+        push!(expressions, expression_x * expression_y)
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -130,9 +130,9 @@ end
 Multiplication operator overload for Number * PiecewiseStructure.
 """
 function Base.:*(x::Number, y::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for expression in y.expressions
-        push!(expressions, x * expression);
+        push!(expressions, x * expression)
     end
     PiecewiseStructure(expressions, y.piecewiseRanges)
 end
@@ -143,9 +143,9 @@ end
 Multiplication operator overload for PiecewiseStructure * Number.
 """
 function Base.:*(x::PiecewiseStructure, y::Number)
-    expressions = [];
+    expressions = []
     for expression in x.expressions
-        push!(expressions, expression * y);
+        push!(expressions, expression * y)
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -156,9 +156,9 @@ end
 Division operator overload for PiecewiseStructure / PiecewiseStructure.
 """
 function Base.:/(x::PiecewiseStructure, y::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for (expression_x, expression_y) in zip(x.expressions, y.expressions)
-        push!(expressions, expression_x / expression_y);
+        push!(expressions, expression_x / expression_y)
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -169,9 +169,9 @@ end
 Division operator overload for Number / PiecewiseStructure.
 """
 function Base.:/(x::Number, y::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for expression in y.expressions
-        push!(expressions, x / expression);
+        push!(expressions, x / expression)
     end
     PiecewiseStructure(expressions, y.piecewiseRanges)
 end
@@ -182,9 +182,9 @@ end
 Division operator overload for PiecewiseStructure / Number.
 """
 function Base.:/(x::PiecewiseStructure, y::Number)
-    expressions = [];
+    expressions = []
     for expression in x.expressions
-        push!(expressions, expression / y);
+        push!(expressions, expression / y)
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -195,9 +195,9 @@ end
 Power operator overload for PiecewiseStructure ^ PiecewiseStructure.
 """
 function Base.:^(x::PiecewiseStructure, y::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for (expression_x, expression_y) in zip(x.expressions, y.expressions)
-        push!(expressions, expression_x ^ expression_y);
+        push!(expressions, expression_x^expression_y)
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -208,9 +208,9 @@ end
 Power operator overload for Number ^ PiecewiseStructure.
 """
 function Base.:^(x::Number, y::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for expression in y.expressions
-        push!(expressions, x ^ expression);
+        push!(expressions, x^expression)
     end
     PiecewiseStructure(expressions, y.piecewiseRanges)
 end
@@ -221,9 +221,9 @@ end
 Power operator overload for PiecewiseStructure ^ Number.
 """
 function Base.:^(x::PiecewiseStructure, y::Number)
-    expressions = [];
+    expressions = []
     for expression in x.expressions
-        push!(expressions, expression ^ y);
+        push!(expressions, expression^y)
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -234,9 +234,9 @@ end
 Log function overload for PiecewiseStructure.
 """
 function Base.:log(x::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for expression in x.expressions
-        push!(expressions, log(expression));
+        push!(expressions, log(expression))
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -247,9 +247,9 @@ end
 Sin function overload for PiecewiseStructure.
 """
 function Base.:sin(x::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for expression in x.expressions
-        push!(expressions, sin(expression));
+        push!(expressions, sin(expression))
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -260,9 +260,9 @@ end
 Cos function overload for PiecewiseStructure.
 """
 function Base.:cos(x::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for expression in x.expressions
-        push!(expressions, cos(expression));
+        push!(expressions, cos(expression))
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -273,9 +273,9 @@ end
 Tan function overload for PiecewiseStructure.
 """
 function Base.:tan(x::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for expression in x.expressions
-        push!(expressions, tan(expression));
+        push!(expressions, tan(expression))
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -286,9 +286,9 @@ end
 Cot function overload for PiecewiseStructure.
 """
 function Base.:cot(x::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for expression in x.expressions
-        push!(expressions, cot(expression));
+        push!(expressions, cot(expression))
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -299,9 +299,9 @@ end
 Sec function overload for PiecewiseStructure.
 """
 function Base.:sec(x::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for expression in x.expressions
-        push!(expressions, sec(expression));
+        push!(expressions, sec(expression))
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -312,9 +312,9 @@ end
 Sqrt function overload for PiecewiseStructure.
 """
 function Base.:sqrt(x::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for expression in x.expressions
-        push!(expressions, sqrt(expression));
+        push!(expressions, sqrt(expression))
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -325,9 +325,9 @@ end
 Atan function overload for PiecewiseStructure.
 """
 function Base.:atan(x::PiecewiseStructure, y::PiecewiseStructure)
-    expressions = [];
+    expressions = []
     for (expression_x, expression_y) in zip(x.expressions, y.expressions)
-        push!(expressions, atan(expression_x, expression_y));
+        push!(expressions, atan(expression_x, expression_y))
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
@@ -341,7 +341,7 @@ at a given argument `x`.
 function (p::PiecewiseStructure)(x)
     for (expression, range) in zip(p.expressions, p.piecewiseRanges)
         if (x >= range[1] && x <= range[2])
-            return isempty(methods(expression)) ? expression : expression(x);
+            return isempty(methods(expression)) ? expression : expression(x)
         end
     end
 end
@@ -353,12 +353,15 @@ Builds a PiecewiseStructure `x` with symbolic expressions as callable,
 fast functions with an argument `arg`.
 """
 function eval_build_functions(x::PiecewiseStructure, arg; worldage = true)
-    expressions = [];
+    expressions = []
     for expression in x.expressions
         if worldage
-            push!(expressions, eval(build_function(expression, arg, expression = Val{false})));
+            push!(
+                expressions,
+                eval(build_function(expression, arg, expression = Val{false})),
+            )
         else
-            push!(expressions, eval(build_function(expression, arg)));
+            push!(expressions, eval(build_function(expression, arg)))
         end
     end
     PiecewiseStructure(expressions, x.piecewiseRanges)
