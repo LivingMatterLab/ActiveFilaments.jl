@@ -10,10 +10,6 @@ struct TrunkInterpolations{T}
     R1::SVector{5, PiecewiseFunction{T, Interpolations.Extrapolation}}
     R2::SVector{5, PiecewiseFunction{T, Interpolations.Extrapolation}}
     K::SVector{4, PiecewiseFunction{T, Interpolations.Extrapolation}}
-    # K0::PiecewiseFunction{T, Interpolations.Extrapolation}
-    # K1::PiecewiseFunction{T, Interpolations.Extrapolation}
-    # K2::PiecewiseFunction{T, Interpolations.Extrapolation}
-    # K3::PiecewiseFunction{T, Interpolations.Extrapolation}
 end
 
 struct ClampingCondition
@@ -49,9 +45,6 @@ end
     Z1::SVector{T, Float64}
     "Upper material coordinate limits"
     Z2::SVector{T, Float64}
-    # "Material coordinate vectors"
-    # Z::SVector{T, SVector{N, Float64}} = 
-    #     SVector{T, SVector{N, Float64}}([SVector{N, Float64}(LinRange(Z1[i], Z2[i], N)) for i in 1:T])
     
     "Material coordinate vectors"
     Z::SVector{T, LinRange{Float64, Int64}} = 
@@ -119,16 +112,6 @@ end
     α2_ovo::SVector{T, Float64}
     "Inner ventral helical angle (tilde)"
     α2_ivo::SVector{T, Float64}
-
-    # "Helical angles (tilde)"
-    # α2::SMatrix{T, 6, Union{Float64, Nothing}} = 
-    #     SMatrix{T, 6, Union{Float64, Nothing}}(
-    #         reduce(vcat, 
-    #             [
-    #                 [nothing, -α2_ovo, α2_ovo, α2_ivo, -α2_ivo, nothing] for i in 1:T
-    #             ]
-    #             )
-    #     )
     
     "Trunk stiffness K0"
     K0::SMatrix{T, N, Float64} = SMatrix{T, N, Float64}(
@@ -146,67 +129,6 @@ end
     K3::SMatrix{T, N, Float64} = SMatrix{T, N, Float64}(
        reduce(vcat, [transpose(E * pi / (1.0 + ν) / 4.0 * R0[i, :] .^ 4) for i in 1:T])
     )
-
-    # "Precomputed quantities"
-    # p::SVector{7, SVector{3, SMatrix{T, N, Float64}}} = compute_p(trunk)
-
-    # "Interpolating functions"
-    # interpolations::TrunkInterpolations = TrunkInterpolations(
-    #     SVector{5, PiecewiseFunction{T, Interpolations.Extrapolation}}(
-    #         [PiecewiseFunction(
-    #             SVector{T, Interpolations.Extrapolation}(
-    #                 [cubic_spline_interpolation(Z[i], R1[i, j]) for i in 1:T]
-    #             ),
-    #             SVector{T, SVector{2, Float64}}(
-    #                 [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
-    #             )
-    #         )
-    #         for j in 1:5]
-    #     ),
-    #     SVector{5, PiecewiseFunction{T, Interpolations.Extrapolation}}(
-    #         [PiecewiseFunction(
-    #             SVector{T, Interpolations.Extrapolation}(
-    #                 [cubic_spline_interpolation(Z[i], R2[i, j]) for i in 1:T]
-    #             ),
-    #             SVector{T, SVector{2, Float64}}(
-    #                 [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
-    #             )
-    #         )
-    #         for j in 1:5]
-    #     ),
-    #     PiecewiseFunction(
-    #         SVector{T, Interpolations.Extrapolation}(
-    #             [cubic_spline_interpolation(Z[i], K0[i, :]) for i in 1:T]
-    #         ),
-    #         SVector{T, SVector{2, Float64}}(
-    #             [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
-    #         )
-    #     ),
-    #     PiecewiseFunction(
-    #         SVector{T, Interpolations.Extrapolation}(
-    #             [cubic_spline_interpolation(Z[i], K1[i, :]) for i in 1:T]
-    #         ),
-    #         SVector{T, SVector{2, Float64}}(
-    #             [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
-    #         )
-    #     ),
-    #     PiecewiseFunction(
-    #         SVector{T, Interpolations.Extrapolation}(
-    #             [cubic_spline_interpolation(Z[i], K2[i, :]) for i in 1:T]
-    #         ),
-    #         SVector{T, SVector{2, Float64}}(
-    #             [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
-    #         )
-    #     ),
-    #     PiecewiseFunction(
-    #         SVector{T, Interpolations.Extrapolation}(
-    #             [cubic_spline_interpolation(Z[i], K3[i, :]) for i in 1:T]
-    #         ),
-    #         SVector{T, SVector{2, Float64}}(
-    #             [SVector{2, Float64}([Z1[i], Z2[i]]) for i in 1:T]
-    #         )
-    #     )
-    # )
 
     "Volumetric density"
     ρvol::Float64
@@ -240,19 +162,6 @@ end
     clamping_condition::ClampingCondition = ClampingCondition(r0, d10, d20, d30)
     clamping_condition_unrolled::SVector{12, Float64} = 
         [clamping_condition.r0..., clamping_condition.d10..., clamping_condition.d20..., clamping_condition.d30...]
-
-    # "Default clamping condition"
-    # r0::SVector{3, Float64} = @SVector [0.0, 0.0, 0.0]
-    # d10::SVector{3, Float64} = @SVector [1.0, 0.0, 0.0]
-    # d20::SVector{3, Float64} = @SVector [0.0, 1.0, 0.0]
-    # d30::SVector{3, Float64} = @SVector [0.0, 0.0, 1.0]
-    # clamping_condition::ClampingCondition = ClampingCondition(r0, d10, d20, d30)
-    # clamping_condition_unrolled::SVector{12, Float64} = 
-    #     [clamping_condition.r0..., clamping_condition.d10..., clamping_condition.d20..., clamping_condition.d30...]
-
-    # "Trunk 'joint' sphere"
-    # sphere_r::Float64
-    # sphere::Sphere = Sphere(sphere_r, clamping_condition.r0 - clamping_condition.d30 * sphere_r)
 end
 
 @with_kw struct TrunkFast{T, N}

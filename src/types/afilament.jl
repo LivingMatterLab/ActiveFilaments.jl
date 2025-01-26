@@ -200,7 +200,6 @@ end
 
 Creates a filament stiffness definition `FilamentStiffness` using an array of stiffness coefficients.
 """
-# FilamentStiffness(K::SVector{4, T}) where T = FilamentStiffness{T}(K[1], K[2], K[3], K[4]);
 FilamentStiffness(K::SVector{4, Float64}) = FilamentStiffness{Float64}(K[1], K[2], K[3], K[4]);
 FilamentStiffness(K::SVector{4, Vector{Float64}}) = FilamentStiffness{Vector{Float64}}(K[1], K[2], K[3], K[4]);
 FilamentStiffness(K::SVector{4, T}) where T<:AbstractInterpolation = FilamentStiffness{T}(K[1], K[2], K[3], K[4]);
@@ -333,10 +332,8 @@ function AFilament(rings0::Vector{Ring{T}} where T<:AbstractFloat;
 
         ρlin0 = pi * ρvol * R0^2;
 
-        # see other comment about worldage
+        # See above comment about worldage
         ρlin0Int = eval(build_function(ρlin0 * (L - Zs), Zs, expression = expression));
-
-        # ρlin0Int = build_function(ρlin0 * (L - Zs), Zs, expression = expression);
     end
 
     stiffness = FilamentStiffness(computeK(rings, innerTube))
@@ -355,11 +352,11 @@ function AFilament(rings::Vector{Ring{T}} where T<:AbstractVector;
 
     R0 = rings0[end].geometry.R2;
     if (phi2 != 0)
-        # see other comment about worldage
+        # See other comment about worldage
         ρlin0 = eval(build_function(simplify(pi * ρvol * (R0[1] - Zs * tan(phi2))^2), Zs, expression = Val{false}));
         ρlin0Int = eval(build_function(simplify(pi / (3.0 * L^2) * ρvol * ((L - Zs)^3 * R0[1]^2 + (L - Zs)^2 * (L + 2 * Zs) * R0[1] * R0[end] + (L^3 - Zs^3) * R0[end]^2)), Zs, expression = Val{false}))
     else
-        # see other comment about worldage
+        # See other comment about worldage
         ρlin0 = pi * ρvol * R0[1]^2;
         ρlin0Int = eval(build_function(ρlin0 * (L - Zs), Zs, expression = Val{false}));
     end

@@ -295,47 +295,15 @@ function computeUQuantities(filament::AFilament{1, M} where M, activationsFourie
         theta2T_interp = interp(filament.Z, theta2T);
         push!(argTerms, theta2T_interp);
 
-        # push!(uPrefactors, Prefactors(simplify(propertyPrefactors.pre_ζ * a0), simplify(propertyPrefactors.pre_u1 * A), simplify(-propertyPrefactors.pre_u2 * A), simplify(propertyPrefactors.pre_u3 * a0)));
         push!(uPrefactors, Prefactors{Interpolations.Extrapolation}(interp(Z, propertyPrefactors.pre_ζ * a0), interp(Z, propertyPrefactors.pre_u1 * A), interp(Z, -propertyPrefactors.pre_u2 * A), interp(Z, propertyPrefactors.pre_u3 * a0)));
     end
-
-    # Version 2: Static arrays (likely no performance improvement)
-    # ϕ = SVector{M, Float64}([-atan(activationFourier.b1, activationFourier.a1) for activationFourier in activationsFourier]);
-    # argTerms = SVector{M, Interpolations.Extrapolation}([interp(filament.Z, -tan(ring.fiberArchitecture.α2) * log.(ring.geometry.R2 / ring.geometry.R2[1]) / sin(ring.geometry.phi2)) for ring in filament.rings])
-    # uPrefactors = SVector{M, Prefactors{Interpolations.Extrapolation}}([Prefactors(
-    #     interp(Z, propertyPrefactors.pre_ζ * activationFourier.a0), 
-    #     interp(Z, propertyPrefactors.pre_u1 * sqrt(activationFourier.a1^2 + activationFourier.b1^2)), 
-    #     interp(Z, -propertyPrefactors.pre_u2 * sqrt(activationFourier.a1^2 + activationFourier.b1^2)), 
-    #     interp(Z, propertyPrefactors.pre_u3 * activationFourier.a0)) for (activationFourier, propertyPrefactors) in zip(activationsFourier, prefactors)])
-
-    # Version 3: Sized arrays
-    # uPrefactors = Vector{Prefactors{Interpolations.Extrapolation}}(undef, M);
-    # ϕ = Vector{Float64}(undef, M);
-    # argTerms = Vector{Interpolations.Extrapolation}(undef, M);
-    # for i = 1:M
-    #     activationFourier = activationsFourier[i]
-    #     propertyPrefactors = prefactors[i];
-    #     ring = filament.rings[i];
-
-    #     a0 = activationFourier.a0;
-    #     a1 = activationFourier.a1;
-    #     b1 = activationFourier.b1;
-    #     A = sqrt(a1^2 + b1^2);
-    #     R2 = ring.geometry.R2;
-    #     α2 = ring.fiberArchitecture.α2;
-    #     ϕ[i] = -atan(b1, a1);
-
-    #     # Theta2 solution for the linear tapering case
-    #     theta2T = -tan(α2) * log.(R2 / R2[1]) / sin(ring.geometry.phi2);
-    #     theta2T_interp = interp(filament.Z, theta2T);
-    #     argTerms[i] = theta2T_interp;
-    #     uPrefactors[i] = Prefactors{Interpolations.Extrapolation}(interp(Z, propertyPrefactors.pre_ζ * a0), interp(Z, propertyPrefactors.pre_u1 * A), interp(Z, -propertyPrefactors.pre_u2 * A), interp(Z, propertyPrefactors.pre_u3 * a0));
-    # end
 
     PrecomputedQuantities{Float64, Interpolations.Extrapolation}(uPrefactors, ϕ, argTerms)
 end
 
-### Refactor the two functions below because they are the same apart from the ActivationFourier type
+### The functions computeUQuantities and computeUQuantitiesSym can be combined 
+### into one with other necessary changes, because they are the same apart from 
+### the ActivationFourier type in the collection
 function computeUQuantities(filament::AFilament{0, M} where M, activationsFourier::Vector{ActivationFourier}, prefactors::Vector{Prefactors})
     uPrefactors = Vector{Prefactors{Float64}}();
     ϕ = Vector{Float64}();

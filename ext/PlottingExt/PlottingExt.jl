@@ -1,3 +1,4 @@
+### The plotting module extension
 module PlottingExt
 using ActiveFilaments
 using ColorSchemes
@@ -7,8 +8,6 @@ using Plots
 using Interpolations
 using Rotations
 using StaticArrays
-
-# import ActiveFilaments: plotReachabilityCloudRGB, plotReachabilityCloud
 
 function ActiveFilaments.plotReachabilityCloudRGB(sols, activationsGamma::Matrix{Float64}, gammaBounds, axesLimits; 
     gravity = false, full_solution = false, flipped = false, showBox = true, hideAll = false, 
@@ -27,7 +26,7 @@ function ActiveFilaments.plotReachabilityCloudRGB(sols, activationsGamma::Matrix
         if gravity
             points = [sol_i[end][1:3] for sol_i in sols]; # Assuming that second element of each sol is the support moment vector
         else
-            points = sols.u; # ????
+            # Case currently unused
         end
     else
         if gravity
@@ -83,11 +82,6 @@ function ActiveFilaments.plotReachabilityCloudRGB(sols, activationsGamma::Matrix
         limits!(ax, axesLimits[1], axesLimits[2], axesLimits[3], axesLimits[4], axesLimits[5], axesLimits[6])
     end
 
-    # if (hideAll)
-    #     hidedecorations!(ax)
-    #     hidespines!(ax)
-    # end
-
     if (showBox)
         hidedecorations!(ax, grid = false);
     else
@@ -114,7 +108,7 @@ function ActiveFilaments.plotReachabilityCloud(sols, activationsGamma::Matrix{Fl
         if gravity
             points = [sol_i[end][1:3] for sol_i in sols]; # Assuming that second element of each sol is the support moment vector
         else
-            points = sols.u; # ????
+            # Case currently unused
         end
     else
         if gravity
@@ -168,11 +162,6 @@ function ActiveFilaments.plotReachabilityCloud(sols, activationsGamma::Matrix{Fl
         limits!(ax, axesLimits[1], axesLimits[2], axesLimits[3], axesLimits[4], axesLimits[5], axesLimits[6])
     end
 
-    # if (hideAll)
-    #     hidedecorations!(ax)
-    #     hidespines!(ax)
-    # end
-
     if (showBox)
         hidedecorations!(ax, grid = false);
     else
@@ -195,7 +184,7 @@ function ActiveFilaments.plotReachabilityCloudRGBSlice(sols, activationsGamma::M
         if gravity
             points = [sol_i[end][1:3] for sol_i in sols]; # Assumign that second element of each sol is the support moment vector
         else
-            points = sols.u; # ????
+            # Case currently unused
         end
     else
         if gravity
@@ -214,17 +203,10 @@ function ActiveFilaments.plotReachabilityCloudRGBSlice(sols, activationsGamma::M
     z = getindex.(points, 3) * (flipped ? -1 : 1);
 
     cropMap = ((fy * y - tana * x .<= t / 2) .& (fy * y - tana * x .>= -t / 2));
-    # xCrop = x .* cropMap;
-    # yCrop = y .* cropMap;
-    # zCrop = z .* cropMap;
 
     xCrop = x[cropMap];
     yCrop = y[cropMap];
     zCrop = z[cropMap];
-    
-    # x = getindex.(points, 1) * (flipped ? -1 : 1);
-    # y = getindex.(points, 2);
-    # z = getindex.(points, 3) * (flipped ? -1 : 1);
 
     activations = [abs.(activationsGamma[i, :]) for i in axes(activationsGamma, 1)];
     
@@ -273,7 +255,7 @@ function ActiveFilaments.plotReachabilityCloudSlice(sols, activationsGamma::Matr
         if gravity
             points = [sol_i[end][1:3] for sol_i in sols]; # Assumign that second element of each sol is the support moment vector
         else
-            points = sols.u; # ????
+            # Case currently unused
         end
     else
         if gravity
@@ -292,17 +274,10 @@ function ActiveFilaments.plotReachabilityCloudSlice(sols, activationsGamma::Matr
     z = getindex.(points, 3) * (flipped ? -1 : 1);
 
     cropMap = ((fy * y - tana * x .<= t / 2) .& (fy * y - tana * x .>= -t / 2));
-    # xCrop = x .* cropMap;
-    # yCrop = y .* cropMap;
-    # zCrop = z .* cropMap;
 
     xCrop = x[cropMap];
     yCrop = y[cropMap];
     zCrop = z[cropMap];
-    
-    # x = getindex.(points, 1) * (flipped ? -1 : 1);
-    # y = getindex.(points, 2);
-    # z = getindex.(points, 3) * (flipped ? -1 : 1);
 
     activations = [abs.(activationsGamma[:, i]) for i in axes(activationsGamma, 2)];
 
@@ -397,13 +372,6 @@ function computeFiberSide(sol, Θ, Θ2T, Z, R; flipped = false)
     for i in eachindex(Z)
         u = Z[i];
         out[i, :] = [sol(u)[1:3] + v * AngleAxis(Θ + Θ2T(u), sol(u)[10], sol(u)[11], sol(u)[12]) * [sol(u)[4], sol(u)[5], sol(u)[6]] for v in R(u)]
-        # for j in eachindex(R(Z[1]))
-        #     u = Z[i];
-        #     v = R(u);
-        #     println(u);
-        #     println(v);
-        #     out[i, j] = sol(u)[1:3] + v * AngleAxis(Θ + Θ2T(u), sol(u)[10], sol(u)[11], sol(u)[12]) * [sol(u)[4], sol(u)[5], sol(u)[6]];
-        # end
     end
     
     x = getindex.(out, 1) * (flipped ? -1 : 1);
@@ -499,7 +467,6 @@ function plotConfigurationTubesSelfWeight!(filament, activation_structure, activ
 end
 
 function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{1}, activation_structure, sol; n = 100, flipped = false, opacity_core = 1.0, opacity_fibers = 1.0, standard_core = true, perturb_deviation = 0.0, colors = [:yellow, :orange, :blue])
-    #Z = range(0, filament.L, n)
     Θ = range(0, 2 * pi, n) # Flip sign to flip normals
 
     Z = filament.Z;
@@ -546,10 +513,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0}, act
         standard_core = true, perturb_deviation = 0.0, colors = [:yellow, :orange, :blue])
     Z = range(0, filament.L, n)
     Θ = range(0, 2 * pi, n) # Flip sign to flip normals
-    # set_theme!(background = false)
-    # set_theme!()
 
-    # R_tube = standard_core ? range(0.0, filament.rings[1].geometry.R2, n) : range(0.0, filament.rings[1].geometry.R1, n)
     R_outer = standard_core ? filament.rings[1].geometry.R2 : filament.rings[1].geometry.R1;
     
     plotConfigurationTube!(filament, sol, R_outer = R_outer, flipped = flipped, n = n, color = :black, opacity = opacity_core);
@@ -585,28 +549,6 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0}, act
                 
                 x, y, z = computeFiberCap(sol, α2_r, Zp[end], Θ, R_range; flipped = flipped)
                 GLMakie.surface!(x, y, z, color = fill((colors[j], opacity_fibers), n, n), shading = true, ssao = true, invert_normals = true, background = false)
-            end
-
-            if standard_core
-                # R2 = filament.rings[1].geometry.R2;
-                # Θ_all = [];
-                # θ0 = activation_structure[1].θ0;
-                # σ = activation_structure[1].σ;
-                # if (θ0.expressions[i] - σ / 2 > 0.0)
-                #     append!(Θ_all, [range(0.0, θ0.expressions[i] - σ / 2, n)])
-                # end
-                # for j in 1:size(filament.rings) - 1
-                #     θ0_1 = activation_structure[j].θ0;
-                #     σ_1 = activation_structure[j].σ;
-                #     θ0_2 = activation_structure[j + 1].θ0;
-                #     σ_2 = activation_structure[j + 1].σ;
-                #     append!(Θ_all, [range(θ0_1.expressions[i] + σ_1 / 2, θ0_2.expressions[i] - σ_2 / 2, n)]);
-                # end
-                # θ0 = activation_structure[end].θ0;
-                # σ = activation_structure[end].σ;
-                # append!(Θ_all, range(θ0.expressions[i] + σ / 2, 2 * pi, n))
-                
-                # x, y, z = computeTube(sol, R2, Zp, Θ; flipped = flipped)
             end
         end
     else

@@ -111,20 +111,20 @@ The unknown function u has the following structure:
 `(u[13], u[14], u[15])` = moments along `Z`
 """
 function selfWeightDESym!(du, u, p, Z)
-    # p[1] = g
-    # p[2] = filament
-    # p[3] = u_f
+    ### p[1] = g
+    ### p[2] = filament
+    ### p[3] = u_f
     u_f = p[3];
     ζ_hat, u1_hat, u2_hat, u3_hat = [u_f[1](Z), u_f[2](Z), u_f[3](Z), u_f[4](Z)];
     filament = p[2];
 
-    # NOTE 1: For constant zetaHat, this is the same as the old version
-    # NOTE 2: SEE TestingDiff.nb in Mathematica. For piecewise constant helical angle (hence, piecewise constant zetaHat), the old version
+    # NOTE 1: For constant zetaHat, this is the same as the old version ρlinInt = (filament.m / p[4]) * evaluate_integral_AD(u_f[5], Z, filament.L)
+    # NOTE 2: For piecewise constant helical angle (hence, piecewise constant zetaHat), the old version
     # ρlinInt = (filament.m / p[4]) * evaluate_integral_AD(u_f[5], Z, filament.L)
     # is quite close numerically (difference impercetible in plots) to the corrected version below. This happens if the zetaHat in the 
     # helical portion is not significantly different than the zetaHat in the longitudinal portion or if the helical portion is a 
     # small segment of the overall filament.
-    ρlinInt = filament.m / filament.L * (filament.L - Z); # Newest, assuming homogeneous volumetric density in initial conf. and non-tapered
+    ρlinInt = filament.m / filament.L * (filament.L - Z); # Assuming homogeneous volumetric density in initial conf. and a non-tapered filament
 
     n1 = -p[1] * ρlinInt * u[6];
     n2 = -p[1] * ρlinInt * u[9];
@@ -229,7 +229,7 @@ The unknown function u has the following structure:
 
 `(u[13], u[14], u[15])` = moments along `Z`
 
-The residuals to be satisifed are:
+The form of the residuals implies that:
 -   `r(0)` = (0, 0, 0)
 -   `d1(0)` = (1, 0, 0)
 -   `d2(0)` = (0, 1, 0)
@@ -273,31 +273,13 @@ The unknown function u has the following structure:
 
 `(u[13], u[14], u[15])` = moments along `Z`
 
-The residuals to be satisifed are:
--   `r(0)` = (0, 0, 0)
--   `d1(0)` = (1, 0, 0)
--   `d2(0)` = (0, 1, 0)
--   `d3(0)` = (0, 0, 1)
+The form of the residuals implies that:
+-   `r(0)` = p[5][1:3]
+-   `d1(0)` = p[5][4:6]
+-   `d2(0)` = p[5][7:9]
+-   `d3(0)` = p[5][10:12]
 -   `m(L)`  = (0, 0, 0)
 """
-# function selfWeightBC!(residual, u, p, t)
-#     residual[1] = u[1][1] - 0.0;
-#     residual[2] = u[1][2] - 0.0;
-#     residual[3] = u[1][3] - 0.0;
-#     residual[4] = u[1][4] - 1.0;
-#     residual[5] = u[1][5] - 0.0;
-#     residual[6] = u[1][6] - 0.0;
-#     residual[7] = u[1][7] - 0.0;
-#     residual[8] = u[1][8] - 1.0;
-#     residual[9] = u[1][9] - 0.0;
-#     residual[10] = u[1][10] - 0.0;
-#     residual[11] = u[1][11] - 0.0;
-#     residual[12] = u[1][12] - 1.0;
-#     residual[13] = u[end][13] - 0.0;
-#     residual[14] = u[end][14] - 0.0;
-#     residual[15] = u[end][15] - 0.0;
-# end
-
 function selfWeightBC!(residual, u, p, t)
     bc = p[5];
     residual[1] = u[1][1] - bc[1];

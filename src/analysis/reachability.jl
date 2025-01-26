@@ -7,22 +7,13 @@ function generateIntrinsicReachVol(filament::AFilament,
         nTrajectories::Int,
         path::String;
         save_gamma_structs = true)
-    # println("1")
     prefactors = computePropertyPrefactors(filament)
-    # precomputedQuantities, activationsGamma = generatePrecomputedQuantitiesSA(filament, activationGamma, gammaBounds, nTrajectories, prefactors) # For alpha = 0 (actually should do the same for each alpha)
-
     M = typeof(filament).parameters[2];
     
     (activationsFourier, activationsGamma) = generateRandomActivations(activationGamma, gammaBounds, M, nTrajectories);
-    # println("2")
     @time precomputedQuantities = generatePrecomputedQuantitiesSA(filament, activationsFourier, prefactors, nTrajectories);
 
     println("Generated precomputed")
-
-    # u0 = SVector{12, Float64}([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
-    # Zspan = (0.0, filament.L);
-    # prob = ODEProblem(intrinsicConfDESym, u0, Zspan, u_f[1], save_everystep = false);
-
     u0 = SVector{12, Float64}([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
     Zspan = (0.0, filament.L);
     prob = ODEProblem(intrinsicConfDESA, u0, Zspan, precomputedQuantities[1], save_everystep = false);
@@ -58,7 +49,9 @@ function generateIntrinsicReachVol(filament::AFilament,
                     activations_unrolled[i, idxs[j]] .= activationsGamma[i][j].γ;
                 end
             end
-            # @save string(path, "_gamma.jld2") activations_unrolled; # Stack overflow for large clouds when saving into JLD2; JLD2 not needed for raw gammas anyway
+            # Stack overflow for large clouds when saving into JLD2; JLD2 is not needed for raw gammas anyway
+            # @save string(path, "_gamma.jld2") activations_unrolled; 
+
             CSV.write(string(path, "_gamma.csv"), Tables.table(activations_unrolled), writeheader = false);
         end
 
@@ -83,15 +76,11 @@ function generateIntrinsicReachVolSym(filament::AFilament,
         path::String;
         worldage = true)
     prefactors = computePropertyPrefactors(filament)
-    precomputedQuantities = generatePrecomputedQuantities(filament, activationGamma, gammaBounds, nTrajectories, prefactors) # For alpha = 0 (actually should do the same for each alpha)
+    precomputedQuantities = generatePrecomputedQuantities(filament, activationGamma, gammaBounds, nTrajectories, prefactors)
     println("Generated precomputed")
 
     u_f = generateUFunctionsIntrinsic(filament, precomputedQuantities, worldage = worldage);
     println("Generated Runtime Functions"); 
-
-    # u0 = SVector{12, Float64}([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
-    # Zspan = (0.0, filament.L);
-    # prob = ODEProblem(intrinsicConfDESym, u0, Zspan, u_f[1], save_everystep = false);
 
     u0 = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
     Zspan = (0.0, filament.L);
@@ -121,7 +110,6 @@ function generateIntrinsicReachVolSym(filament::AFilament,
 
     points = hcat(x, y, z);
     CSV.write(string(path, ".csv"), Tables.table(points), writeheader=false)
-    # @save string(path, ".csv") 
 
     return sol;
 end
@@ -143,15 +131,8 @@ function generateSelfWeightReachVol(filament::AFilament,
     ρlin0Int = filament.auxiliary.ρlin0Int;
     println("Generated Precomputed"); 
 
-    # arcLengths = [];
-    # for p in precomputedQuantities
-    #     push!(arcLengths, computeUHatSA(0.0, p)[1] * filament.L);
-    # end
-    # println("Generated Arclengths"); 
-
     sol = []
     for gi in g_range
-        # pAll = [(gi, filament, precomputedQuantities[i], arcLengths[i]) for i in 1:nTrajectories]
         pAll = [(gi, ρlin0Int, stiffness, precomputedQuantities[i]) for i in 1:nTrajectories];
         Zspan = (0.0, filament.L);
 
@@ -203,15 +184,8 @@ function generateSelfWeightReachVolSym(filament::AFilament,
     u_f = generateUFunctions(filament, precomputedQuantities);
     println("Generated Runtime Functions"); 
 
-    # arcLengths = [];
-    # for u_fi in u_f
-    #     push!(arcLengths, evaluate_integral_AD(u_fi[5], 0.0, filament.L));
-    # end
-    # println("Generated Arclengths"); 
-
     sol = []
     for gi in g_range
-        # pAll = [(gi, filament, u_f[i], arcLengths[i]) for i in 1:nTrajectories]
         pAll = [(gi, filament, u_f[i]) for i in 1:nTrajectories]
         Zspan = (0.0, filament.L);
 

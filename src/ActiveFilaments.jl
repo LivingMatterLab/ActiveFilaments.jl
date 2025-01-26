@@ -15,10 +15,7 @@ using Preferences, UUIDs
 using Revise;
 using Parameters;
 using StaticArrays;
-#Preferences.set_preferences!(UUID("764a87c0-6b3e-53db-9096-fe964310641d"),
-#    "PrecompileShooting" => false)
 using DifferentialEquations;
-# using BoundaryValueDiffEq;
 using Plots;
 using Rotations;
 using LinearAlgebra;
@@ -29,21 +26,15 @@ using DataFrames;
 using JLD2;
 using Symbolics;
 using SymbolicNumericIntegration;
-# using DiffEqGPU;
 using Distributions;
 using DocStringExtensions;
 using QuadGK;
 using Interpolations;
 using Optimization;
-# using OptimizationOptimJL;
 using Distances;
 using ForwardDiff;
-# using Zygote;
-# using ReverseDiff;
-# using ModelingToolkit;
 using OptimizationNLopt;
 using OptimizationBBO;
-# using OptimizationPRIMA;
 using OptimizationNOMAD;
 using ODEInterfaceDiffEq;
 
@@ -102,6 +93,7 @@ export
     build_trunk_bvp,
     build_trunk_wrap_bvp,
     build_trunk_wrap_nbodyc_bvp,
+    build_trunk_wrap_offset_nbodyc_bvp,
     self_weight_solve_single,
     optimize_activation,
     rotate_bc,
@@ -129,7 +121,9 @@ include("computation/computation.jl");
 include("utils.jl");
 include("analysis/analysis.jl");
 include("inverse_problems/inverse.jl")
-include("legacy/legacy.jl") # Legacy (comment out if unnecessary): needed for some legacy data imports
+
+# Legacy (comment out if unnecessary): needed for some legacy data imports
+include("legacy/legacy.jl") 
 
 # Plotting functionality
 include("plotting/plotting.jl")

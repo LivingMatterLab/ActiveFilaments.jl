@@ -1,4 +1,4 @@
-# This is an estimate. Would be exact with n -> Infinity
+# This is an estimate. This becomes exact with n -> Infinity
 function estimateTotalBending(sol::ODESolution, filament, refVector; n = 20, normal = [1.0, 0.0, 0.0])
     Z = LinRange(0.0, filament.L, n);
     points = sol.(Z);
@@ -40,7 +40,6 @@ end
 function bendingAngle(r::Vector, refVector)
     end_vector = [r[1][end] - r[1][end - 1], r[2][end] - r[2][end - 1], r[3][end] - r[3][end - 1]];
     end_vector = end_vector / norm(end_vector);
-    # return acos(dot(end_vector, refVector));
     return end_vector[2] <= 0.0 ? atan(norm(cross(end_vector, refVector)), dot(end_vector, refVector)) : 2 * pi - atan(norm(cross(end_vector, refVector)), dot(end_vector, refVector));
 end
 
@@ -48,11 +47,7 @@ function loopRadius(sol::ODESolution, filament; f1 = 1.0 / 5.0, f2 = 2.0 / 5.0)
     point1 = sol(filament.L)[1:3];
     point2 = sol(filament.L - filament.L * f1)[1:3];
     point3 = sol(filament.L - filament.L * f2)[1:3];
-
-    # Projection not needed for Menger curvature...
-    # point1 = projectOntoPlane(point1, [1.0, 0.0, 0.0]);
-    # point2 = projectOntoPlane(point2, [1.0, 0.0, 0.0]);
-    # point3 = projectOntoPlane(point3, [1.0, 0.0, 0.0]);
+    # Projection not needed for Menger curvature.
 
     radius = mengerRadius(point1, point2, point3);
     return radius;
@@ -69,10 +64,6 @@ function loopRadius(r::Vector, L; f1 = 1.0 / 5.0, f2 = 2.0 / 5.0)
     point1 = rM[id1, :];
     point2 = rM[id2, :];
     point3 = rM[id3, :];
-
-    # point1 = projectOntoPlane(point1, [1.0, 0.0, 0.0]);
-    # point2 = projectOntoPlane(point2, [1.0, 0.0, 0.0]);
-    # point3 = projectOntoPlane(point3, [1.0, 0.0, 0.0]);
 
     radius = mengerRadius(point1, point2, point3);
     return radius;
@@ -146,9 +137,12 @@ function fiberCurve(fiberID::FiberID, sol::ODESolution, Z, filament, activation_
     return sol(Z)[1:3] + R2 * (cos(arg) * sol(Z)[4:6] + sin(arg) * sol(Z)[7:9]);
 end
 
-### Only for non-tapered
-### CURRENTLY WORKS ONLY IF THERE IS ONE FIBER PER RING. NEED TO CHANGE θ0 TO THE ANGLE FOR A PARTICULAR
-### FIBER IN A RING GIVEN FIBERID (NOT JUST θ0 FOR THE WHOLE RING), IF IT IS TO WORK WITH RINGS WITH MULTIPLE FIBERS.
+### Limitations of fiberCurveD, fiberCurveRefD:
+### - only for non-tapered filaments
+### - currently works only if there is one fiber per ring. For this to work
+###   with rings with multiple fibers, need to change θ0 to the angle for a
+###   particular fiber in a ring given FiberID (not just θ0 for the whole ring)
+### These limitations propagate to: fiberLength, fiberLengthRef, fiberStrain
 function fiberCurveD(fiberID::FiberID, sol::ODESolution, Z, filament, activation_structure)
     θ0 = activation_structure[fiberID.ringIndex].θ0;
     R2 = filament.rings[fiberID.ringIndex].geometry.R2;
@@ -210,9 +204,6 @@ function fiberLengthRef(fiberID::FiberID, filament, activation_structure)
     return integral;
 end
 
-### Only for non-tapered
-### CURRENTLY WORKS ONLY IF THERE IS ONE FIBER PER RING. NEED TO CHANGE θ0 TO THE ANGLE FOR A PARTICULAR
-### FIBER IN A RING GIVEN FIBERID (NOT JUST θ0 FOR THE WHOLE RING), IF IT IS TO WORK WITH RINGS WITH MULTIPLE FIBERS.
 function fiberStrain(fiberID::FiberID, sol::ODESolution, filament, activation_structure)
     return fiberLength(fiberID, sol, filament, activation_structure) / fiberLengthRef(fiberID, filament, activation_structure) - 1.0;
 end

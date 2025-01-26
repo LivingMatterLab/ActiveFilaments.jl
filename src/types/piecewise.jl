@@ -338,7 +338,6 @@ end
 PiecewiseStructure functor. Evaluates the piecewise structure
 at a given argument `x`.
 """
-# Change the functor to rely on dispatch and not on iscallable
 function (p::PiecewiseStructure)(x)
     for (expression, range) in zip(p.expressions, p.piecewiseRanges)
         if (x >= range[1] && x <= range[2])
@@ -346,14 +345,6 @@ function (p::PiecewiseStructure)(x)
         end
     end
 end
-
-# function (p::PiecewiseStructure{<:AbstractFloat})(x)
-#     for (expression, range) in zip(p.expressions, p.piecewiseRanges)
-#         if (x >= range[1] && x <= range[2])
-#             return expression;
-#         end
-#     end
-# end
 
 """
     $(FUNCTIONNAME)(x::PiecewiseStructure, arg; worldage = true)

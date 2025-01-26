@@ -1,4 +1,3 @@
-### This is WIP
 function flattenActivation(activations::AbstractArray{<:AbstractActivation}; static = false)
     n_act = [activation.N for activation in activations];
     n_act_total = sum(n_act);
@@ -11,9 +10,8 @@ function flattenActivation(activations::AbstractArray{<:AbstractActivation}; sta
     end
 end
 
-# This unflattening process really isn't liked by any auto-diff methods apart from FiniteDiff
+# The unflattening process is incompatible with many auto-diff methods apart from FiniteDiff
 function unflattenActivation!(activation::AbstractArray{<:AbstractActivation}, activations_flattened::AbstractArray)
-    # activation = copy(activation_structure);
     counter = 1;
     for i in eachindex(activation)
         for j in eachindex(activation[i].γ)
@@ -21,7 +19,6 @@ function unflattenActivation!(activation::AbstractArray{<:AbstractActivation}, a
             counter = counter + 1;
         end
     end
-    # activation
 end
 
 function buildDistanceFunction(
@@ -32,7 +29,6 @@ function buildDistanceFunction(
         u0 = SVector{12, Float64}([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]), 
         Zspan = (0.0, filament.L), args...; 
         kwargs...)
-    # activation = copy(activation_structure);
     if (controlObjective.propertyType === r)
         return (function f(x, p)
                     unflattenActivation!(activation, x);
@@ -41,40 +37,18 @@ function buildDistanceFunction(
                     # Adapt for vectors
                     sol_r = sol(controlObjective.args[1])[1:3];
                     return sqeuclidean(sol_r, controlObjective.properties[1, :]); 
-                end)
+                end);
     else
-        # Implement
+        # Other property types are not used in current code. Implement as needed. 
     end
-
-    
 end
 
 function optimizeActivation(controlObjective::ConfigurationControlObjective, filament::AFilament{V, M, A} where {V, M, A}, activation_structure::AbstractArray{<:AbstractActivation}, activation0::AbstractArray{<:AbstractActivation}, args...; kwargs...)
     activation = deepcopy(activation_structure);
-    # f = buildDistanceFunction(controlObjective, filament, activation, solveIntrinsic, args...);
     f = buildDistanceFunction(controlObjective, filament, activation, selfWeightSolve, args...);
-    println(f([-0.1,-0.1,-0.1], 0.0));
     x0 = flattenActivation(activation0);
-
-    # f = OptimizationFunction(f, Optimization.AutoFiniteDiff());
-
-    # f = OptimizationFunction(f, Optimization.AutoModelingToolkit());
-
-    # optf = OptimizationFunction(f, Optimization.AutoZygote()); # Requires SciMLSensitivity.jl?
-
-    # f = OptimizationFunction(f, Optimization.AutoForwardDiff()); # Not compatible?
-
-    # optf =  OptimizationFunction(f, Optimization.AutoReverseDiff(compile = false));
-
-    # prob = OptimizationProblem(f, x0, [1.0, 2.0], lb = [-Inf, -Inf, -Inf], ub = [0.0, 0.0, 0.0]);
     prob = OptimizationProblem(f, x0, [1.0, 2.0]; kwargs...);
-
-    # sol = solve(prob, NLopt.G_MLSL(), local_method = NLopt.LN_NELDERMEAD(), maxtime = 10.0) #, maxtime = 10.0
-    # sol = solve(prob, NLopt.G_MLSL(), local_method = NLopt.LN_SBPLX(), maxtime = 10.0) #, maxtime = 10.0
-    # sol = solve(prob, NLopt.LN_NELDERMEAD()) #, maxtime = 10.0
-    sol = solve(prob, NLopt.G_MLSL(), local_method = NLopt.LN_NELDERMEAD(), maxtime = 10.0) #, maxtime = 10.0
-
-    # sol = solve(prob, NLopt.LN_SBPLX()) #, maxtime = 10.0
+    sol = solve(prob, NLopt.G_MLSL(), local_method = NLopt.LN_NELDERMEAD(), maxtime = 10.0);
 
     sol
 end
@@ -140,14 +114,10 @@ function distance_function(
             if t === r
                 sol_prop = sol_arg[1:3]
                 dist_r = euclidean(sol_prop, prop_i[j, :])
-                # @info "r-distance @Z = $(arg_i[j]): $dist_r"
-
                 out = out + weights_i[j] * dist_r
             elseif t === d3 
                 sol_prop = sol_arg[10:12]
                 dist_d3 = euclidean(sol_prop, prop_i[j, :])
-                # @info "d3-distance @Z = $(arg_i[j]): $dist_d3"
-
                 out = out + weights_i[j] * dist_d3
             end
         end
@@ -199,14 +169,10 @@ function build_distance_function(
                     if t === r
                         sol_prop = sol_arg[1:3]
                         dist_r = euclidean(sol_prop, prop_i[j, :])
-                        @info "r-distance @Z = $(arg_i[j]): $dist_r"
-
                         out = out + weights_i[j] * dist_r
                     elseif t === d3 
                         sol_prop = sol_arg[10:12]
                         dist_d3 = euclidean(sol_prop, prop_i[j, :])
-                        @info "d3-distance @Z = $(arg_i[j]): $dist_d3"
-
                         out = out + weights_i[j] * dist_d3
                     end
                 end
@@ -266,8 +232,6 @@ function build_distance_function(
         # Include rotation as DOFs                  
         bc_v = rotate_bc(trunk, (x[29], x[30]))
         
-        # new_bcs = (x[29] == bvp.p[6][1] && x[30] == bvp.p[6][2]) ? nothing : SVector{12, Float64}(bc_v)
-        
         sol, a = ivp_solve_single(ivp, trunk, γ, args...; new_u0 = bc_v, kwargs...)
 
         out = 0.0
@@ -281,14 +245,10 @@ function build_distance_function(
                 if t === r
                     sol_prop = sol_arg[1:3]
                     dist_r = euclidean(sol_prop, prop_i[j, :])
-                    # @info "r-distance @Z = $(arg_i[j]): $dist_r"
-
                     out = out + weights_i[j] * dist_r
                 elseif t === d3 
                     sol_prop = sol_arg[10:12]
                     dist_d3 = euclidean(sol_prop, prop_i[j, :])
-                    # @info "d3-distance @Z = $(arg_i[j]): $dist_d3"
-
                     out = out + weights_i[j] * dist_d3
                 end
             end
@@ -300,38 +260,10 @@ function build_distance_function(
     end)
 end
 
-# function rotate_bc(trunk::TrunkFast{T, N}, θ::Tuple{Float64, Float64}) where {T, N}
-#     rot1 = AngleAxis(θ[1], 1.0, 0.0, 0.0)
-#     rot2 = AngleAxis(θ[2], 0.0, 1.0, 0.0)
-    
-#     cond = trunk.trunk.clamping_condition
-#     sphere = trunk.trunk.sphere
-
-#     # bc = transpose(hcat(cond.d10, cond.d20, cond.d30))
-
-#     # bc = rot2 * rot1 * bc
-
-#     # r0 = sphere.c + bc[3, :] * sphere.r
-
-#     # bc_v = vcat(r0, reshape(transpose(bc), 9))
-
-#     bc = hcat(cond.d10, cond.d20, cond.d30)
-
-#     bc = rot2 * rot1 * bc
-
-#     r0 = sphere.c + bc[:, 3] * sphere.r
-
-#     bc_v = SVector{12, Float64}(vcat(r0, reshape(bc, 9)))
-
-#     bc_v
-# end
-
 function rotate_bc(trunk::TrunkFast{T, N}, θ::Tuple{Float64, Float64}) where {T, N}
-    # rot1 = AngleAxis(θ[1], 1.0, 0.0, 0.0)
-    rot1 = AngleAxis(θ[1], 0.0, 0.0, 1.0) # Changed to rotation around Z, which makes more sense
+    rot1 = AngleAxis(θ[1], 0.0, 0.0, 1.0) # Rotation around Z is most intuitive in this case
     rot2 = AngleAxis(θ[2], 0.0, 1.0, 0.0)
-    # rot = rot2 * rot1
-    rot = rot1 * rot2 # Makes sure that the rotation is intrinsic and not extrinsic (1 * 2 instead of 2 * 1)
+    rot = rot1 * rot2 # Rotation is intrinsic and not extrinsic (1 * 2 instead of 2 * 1)
 
     cond = trunk.trunk.clamping_condition
     sphere_joint = trunk.trunk.sphere_joint
@@ -370,39 +302,20 @@ function optimize_activation(
     f = (x, p) -> distance_function(x, control_objective, trunk, bvp; u0 = u0, 
                             abstol = abstol, reltol = reltol, solver = solver, kwargs...)
 
-    # f = build_distance_function(control_objective, trunk, self_weight_solve_single, bvp, x_previous, args...; optimize_bc = optimize_bc, abstol = abstol, reltol = reltol, kwargs...)
-    
-    # f = OptimizationFunction(f, Optimization.AutoForwardDiff())
-    println(f(x0, nothing))
-    # g = (x, p) -> (f(x, p) + 0.1 * norm(x, 2)^2)
-
     prob = OptimizationProblem(f, x0, nothing; kwargs...);
-
-    # sol = solve(prob, NLopt.G_MLSL(), local_method = NLopt.LN_NELDERMEAD(), maxtime = 60.0)
-
-    # sol = solve(prob, NLopt.G_MLSL(), local_method = NLopt.LN_SBPLX(), maxtime = 30.0)
 
     println("Optimization start")
 
     if local_min
         sol = solve(prob, NLopt.LN_SBPLX(), maxtime = maxtime)
     else
-        # sol = solve(prob, NLopt.GN_DIRECT(), maxtime = maxtime)
-        sol = solve(prob, NLopt.GN_DIRECT_L_RAND(), maxtime = maxtime)
+        sol = solve(prob, OptimizationNOMAD.NOMADOpt(), maxtime = maxtime)
     end
-    # sol = solve(prob, NLopt.GN_DIRECT_L_RAND(), maxtime = maxtime)
-    # sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_SBPLX(), maxtime = maxtime)
-    # sol = solve(prob, OptimizationBBO.BBO_adaptive_de_rand_1_bin_radiuslimited(), maxtime = maxtime; NThreads=Threads.nthreads()-1)
-    # sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LD_LBFGS(), maxtime = maxtime)
-    # sol = solve(prob, OptimizationPRIMA.BOBYQA(), maxiters = 10)
 
-    # sol = solve(prob, OptimizationNOMAD.NOMADOpt(), maxtime = maxtime)
-
-    @info "::::::::::::FINAL OBJECTIVE = $(sol.objective) ::::::::::::::"
+    @info ":::::::::::::: FINAL OBJECTIVE = $(sol.objective) ::::::::::::::"
 
     X = [sol[1:12]..., 0.0, sol[13:26]..., 0.0, sol[27], sol[28]]
     γ = (SMatrix{3, 5, Float64}(transpose(reshape(X[1:15], (5, 3)))), SMatrix{3, 5, Float64}(transpose(reshape(X[16:30], (5, 3)))))
-    
 
     if optimize_bc
         θ = (sol[29], sol[30])
@@ -435,26 +348,16 @@ function optimize_activation(
     prob = OptimizationProblem(f, x0, nothing; kwargs...);
 
     println("Optimization start")
-    # sol = solve(prob, NLopt.GN_DIRECT_L_RAND(), maxtime = maxtime)
-
-    # sol = solve(prob, NLopt.GN_DIRECT(), maxtime = maxtime)
 
     if alt_method
         sol = solve(prob, OptimizationBBO.BBO_adaptive_de_rand_1_bin_radiuslimited(), maxtime = maxtime; NThreads=Threads.nthreads()-1)
-        # sol = solve(prob, OptimizationNOMAD.NOMADOpt(), maxtime = maxtime)
     else
         if (local_min)
             sol = solve(prob, NLopt.LN_SBPLX(), maxtime = maxtime)
         else
             sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_NELDERMEAD(), maxtime = maxtime)
-            # sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_SBPLX(), maxtime = maxtime)
         end
     end
-    
-
-    # sol = solve(prob, NLopt.G_MLSL_LDS(), local_method = NLopt.LN_SBPLX(), maxtime = maxtime)
-
-    # sol = solve(prob, OptimizationBBO.BBO_adaptive_de_rand_1_bin_radiuslimited(), maxtime = maxtime; NThreads=Threads.nthreads()-1)
 
     @info "::::::::::::FINAL OBJECTIVE = $(sol.objective) ::::::::::::::"
 
@@ -465,21 +368,4 @@ function optimize_activation(
     θ = (sol[29], sol[30])
     new_bcs = SVector{12, Float64}(rotate_bc(trunk, θ))
     return sol[1:28], γ, θ, new_bcs, sol.objective
-end
-
-
-# Adapted from Kochenderfer, M. J., & Wheeler, T. A. (2019). Algorithms for optimization. MIT Press.
-function ce_method_trunk(f, P, k_max, m = 100, m_elite = 10)
-    P_type = typeof(P)
-    for k in 1:k_max
-        samples = rand(P, m)
-        result = Vector{Float64}(undef, m)
-        Threads.@threads for i in 1:m
-            result[i] = f(samples[:, i])
-        end
-        order = sortperm(result)
-        P = fit(P_type, samples[:, order[1:m_elite]])
-    end
-
-    return P
 end

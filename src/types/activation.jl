@@ -62,7 +62,7 @@ $(TYPEDFIELDS)
 """
 struct ActivationFourier{T} <: AbstractActivationPiecewise
     "Coefficient 1"
-    a0::Float64 # Assumes constant a0 (this is the case if the number of fibers, σ etc. doesn't change with Z); a0 still constant if α2 or θ0 changes
+    a0::Float64 # Assumes constant a0 (this is the case if the number of fibers, σ etc. doesn't change with Z); a0 is still constant if α2 or θ0 changes
     "Coefficient 2"
     a1::T
     "Coefficient 3"
