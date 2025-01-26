@@ -64,3 +64,10 @@ julia> sol(L / 10.0)
   0.2238346915390569
   0.9613177113058022
 ```
+
+# Other work using this package
+[Kaczmarski, B., Moulton, D. E., Goriely, Z., Goriely, A. & Kuhl, E. Ultra-fast physics-based modeling of the elephant trunk. _bioRxiv_ 2024.10.27.620533 (2024).](https://doi.org/10.1101/2024.10.27.620533)
+
+[Kaczmarski, B., Moulton, D. E., Goriely, A. & Kuhl, E. Minimal activation with maximal reach: Reachability clouds of bio-inspired slender manipulators. _Extreme Mechanics Letters_ **71**, 102207 (2024).](https://doi.org/10.1016/j.eml.2024.102207)
+
+[Kaczmarski, B. et al. Minimal Design of the Elephant Trunk as an Active Filament. _Physical Review Letters_ **132**, 248402 (2024).](https://doi.org/10.1103/PhysRevLett.132.248402)
