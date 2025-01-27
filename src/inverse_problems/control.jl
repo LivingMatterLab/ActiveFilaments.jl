@@ -66,7 +66,6 @@ end
 Optimizes the fibrillar activation in a `filament` given a `controlObjective`
 and an `activation_structure`. The initial guess for the optimization is
 passed as input in `activation0`.
-
 """
 function optimizeActivation(
         controlObjective::ConfigurationControlObjective,
@@ -117,6 +116,10 @@ function optimizeActivation(
 
     sols
 end
+
+#########################################################################
+### Inverse problem solving functions for the Trunk package expansion ###
+#########################################################################
 
 function distance_function(
         x::Vector{Float64},
@@ -301,6 +304,17 @@ function build_distance_function(
     end
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Constructs a distance function for a given `control_objective`,
+`trunk`, initial value problem `ivp`, initial condition `u0`, 
+and `Zspan` `Tuple` defining the `Z` interval.  
+
+`ζ_hat_low` and `ζ_hat_high` define the conditions for the 
+onset of the penalty term due to trunk extension constraints.
+
+"""
 function build_distance_function(
         control_objective::ConfigurationControlObjective,
         trunk::TrunkFast{T, N},
@@ -371,6 +385,12 @@ function build_distance_function(
     )
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Rotates the boundary conditions according to the proximal base angles θ.
+
+"""
 function rotate_bc(trunk::TrunkFast{T, N}, θ::Tuple{Float64, Float64}) where {T, N}
     rot1 = AngleAxis(θ[1], 0.0, 0.0, 1.0) # Rotation around Z is most intuitive in this case
     rot2 = AngleAxis(θ[2], 0.0, 1.0, 0.0)
@@ -391,6 +411,33 @@ function rotate_bc(trunk::TrunkFast{T, N}, θ::Tuple{Float64, Float64}) where {T
     bc_v
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Optimizes the fibrillar activation in a `trunk` given a `control_objective`
+and either an `ivp` of type `ODEProblem` or a `bvp` of type `BVProblem`. For `BVProblem`, 
+if `optimize_bc == true`, then the θ angles of the proximal
+base of the trunk will be optimized in addition to the fibrillar activations.
+
+For an `ODEProblem` input:
+-   `u0` = initial condition for the IVP. If `nothing`, then the initial condition
+           from the `ivp` is used
+-   `maxtime` = maximum time allowed for the optimization
+-   `local_min` = true/false designating whether a local minimizing scheme should be used
+-   `alt_method` = true/false designating whether an alternative optimization method
+                   should be used
+-   `ζ_hat_high` = maximum value of the activated extension for all points `Z`
+                   (designates the onset of the penalty term)
+
+For a `BVProblem input`:
+Other input parameters:
+-   `x0` = initial guess for the optimization procedure
+-   `u0` = initial guess for the BVP solver or the initial condition for the IVP
+-   `maxtime` = maximum time allowed for the optimization
+-   `abstol`, `reltol` = absolute and relative tolerances in the optimization procedure
+-   `local_min` = true/false designating whether a local minimizing scheme should be used
+-   `solver` = an integer value indicating the BVP solver
+"""
 function optimize_activation(
         control_objective::ConfigurationControlObjective,
         trunk::TrunkFast{T, N},
@@ -398,7 +445,6 @@ function optimize_activation(
         args...;
         optimize_bc = false,
         x0::Vector{Float64} = (optimize_bc ? zeros(30) : zeros(28)),
-        x_previous::Vector{Float64} = x0,
         u0 = nothing,
         maxtime = 60.0,
         abstol = 1e-8,
@@ -463,8 +509,6 @@ function optimize_activation(
         ζ_hat_high = ζ_hat_high,
         kwargs...
     )
-
-    println(f(x0, nothing))
 
     prob = OptimizationProblem(f, x0, nothing; kwargs...)
 

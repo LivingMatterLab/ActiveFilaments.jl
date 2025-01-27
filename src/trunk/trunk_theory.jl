@@ -33,6 +33,12 @@ function (p::PiecewiseFunction{T, Interpolations.Extrapolation} where {T})(i::In
     return p.objects[i]
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Computes the `AR` and `AL` terms for uniform activation.
+
+"""
 function constant_activation(
         trunk::Trunk{T, N},
         γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}}
@@ -300,7 +306,13 @@ function compute_R_factor(
     return R_factor
 end
 
-# R_factor in the current configuration (with external loading)
+"""
+    $(TYPEDSIGNATURES)
+
+Computes the R_factor (relative change in R0) in the deformed configuration
+(with external loading).
+
+"""
 function compute_R_factor_current(trunk::Trunk{T, N}, sol; n = 200) where {T, N}
     Z_for_len = LinRange(0.0, trunk.L, n)
     len = 0.0
@@ -309,7 +321,6 @@ function compute_R_factor_current(trunk::Trunk{T, N}, sol; n = 200) where {T, N}
         len = len + euclidean(r_Z[i], r_Z[i + 1])
     end
     R_factor = sqrt(trunk.L / len)
-    println(R_factor)
     return R_factor
 end
 
@@ -576,7 +587,11 @@ function self_weight_wrap_trunk_de!(du, u,
     du[15] = ζ_hat * (u2 * u[13] - u1 * u[14]) - l3
 end
 
-### Deprecated. Use self_weight_solve_single instead.
+"""
+    $(TYPEDSIGNATURES)
+
+`self_weight_solve` is deprecated. Use `self_weight_solve_single` instead.
+"""
 function self_weight_solve(trunk::TrunkFast{T, N},
         γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}};
         m0::Vector{Float64} = [0.0, 0.0, 0.0],
@@ -660,6 +675,17 @@ function self_weight_solve(trunk::TrunkFast{T, N},
     sol
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Constructs the `ODEProblem` IVP for a given `trunk`, 
+activation `γ`, initial condition `u0`, and a `Zspan` `Tuple`
+defining the trunk's `Z` interval.
+
+Returns the `ODEProblem` and the `ActivatedTrunkQuantities`
+for the provided `trunk`.
+
+"""
 function build_trunk_ivp(trunk::TrunkFast{T, N},
         γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}} = (
             (@SMatrix zeros(3, 5)),
@@ -689,6 +715,18 @@ function build_trunk_ivp(trunk::TrunkFast{T, N},
     ivp, activation
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Constructs the `TwoPointBVProblem` for a given `trunk`, 
+activation `γ`, boundary conditions `bcs`, initial moment `m0`,
+initial guess `uInit`, gravitational acceleration `g`, 
+and point load `F` at `Z = L`.
+
+Returns the `TwoPointBVProblem` and the `ActivatedTrunkQuantities`
+for the provided `trunk`.
+
+"""
 function build_trunk_bvp(trunk::TrunkFast{T, N},
         γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}} = (
             (@SMatrix zeros(3, 5)),
@@ -716,6 +754,20 @@ function build_trunk_bvp(trunk::TrunkFast{T, N},
     bvp, activation
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Constructs the `TwoPointBVProblem` for a given `trunk`, 
+activation `γ`, boundary conditions `bcs`, initial moment `m0`,
+initial guess `uInit`, gravitational acceleration `g`, 
+weight of the log `W_C`, and a starting coordinate `Z_0` of the
+distributed load. This function neglects the small body couples
+induced by the distributed load.
+
+Returns the `TwoPointBVProblem` and the `ActivatedTrunkQuantities`
+for the provided `trunk`.
+    
+"""
 function build_trunk_wrap_nbodyc_bvp(trunk::TrunkFast{T, N},
         γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}} = (
             (@SMatrix zeros(3, 5)),
@@ -746,6 +798,22 @@ function build_trunk_wrap_nbodyc_bvp(trunk::TrunkFast{T, N},
     bvp, activation
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Constructs the `TwoPointBVProblem` for a given `trunk`, 
+activation `γ`, boundary conditions `bcs`, initial moment `m0`,
+initial guess `uInit`, gravitational acceleration `g`, 
+weight of the log `W_C`, a starting coordinate `Z_0` of the
+distributed load, and a moment `L_moment` due to offset lifting. 
+
+This function neglects the small body couples
+induced by the distributed load.
+
+Returns the `TwoPointBVProblem` and the `ActivatedTrunkQuantities`
+for the provided `trunk`.
+    
+"""
 function build_trunk_wrap_offset_nbodyc_bvp(trunk::TrunkFast{T, N},
         γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}} = (
             (@SMatrix zeros(3, 5)),
@@ -785,6 +853,19 @@ function build_trunk_wrap_offset_nbodyc_bvp(trunk::TrunkFast{T, N},
     bvp, activation
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Constructs the `TwoPointBVProblem` for a given `trunk`, 
+activation `γ`, boundary conditions `bcs`, initial moment `m0`,
+initial guess `uInit`, gravitational acceleration `g`, 
+weight of the log `W_C`, starting coordinate `Z_0` of the
+distributed load, and the moment arm `r_C`.
+
+Returns the `TwoPointBVProblem` and the `ActivatedTrunkQuantities`
+for the provided `trunk`.
+    
+"""
 function build_trunk_wrap_bvp(trunk::TrunkFast{T, N},
         γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}} = (
             (@SMatrix zeros(3, 5)),
@@ -817,6 +898,17 @@ function build_trunk_wrap_bvp(trunk::TrunkFast{T, N},
     bvp, activation
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Computes the deformed configuration of the `trunk`, given a `bvp` that 
+defines the self-weight external loading scenario. See `build_trunk_bvp`.
+
+In contrast to `self_weight_solve`, this version does not iterate through 
+intermediate values of the gravitational acceleration `g`, as it is
+unnecessary in this case.
+    
+"""
 ### Version that does not iterate through intermediate values of the gravitational acceleration g
 function self_weight_solve_single(bvp::BVProblem, trunk::TrunkFast{T, N},
         γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}};
@@ -895,6 +987,16 @@ function self_weight_solve_single(bvp::BVProblem, trunk::TrunkFast{T, N},
     sol, a
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Solves the `ivp` for a given `trunk`, activation `γ`,
+and an optional initial condition update `new_u0`.
+
+Returns the solution to `ivp` and the `ActivatedTrunkQuantities`
+for the provided `trunk`.
+
+"""
 function ivp_solve_single(
         ivp::ODEProblem,
         trunk::TrunkFast{T, N},

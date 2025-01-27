@@ -36,6 +36,13 @@ struct SphereJoint
     sdD_hat_3::SVector{3, Float64}
 end
 
+"""
+    $(TYPEDEF)
+
+Defines the parametrized elephant trunk model.
+
+$(TYPEDFIELDS)
+"""
 @with_kw struct Trunk{T, N}
     "Length of the trunk"
     L::Float64 = 1.0
@@ -165,6 +172,17 @@ end
     ]
 end
 
+"""
+    $(TYPEDEF)
+
+Defines the parametrized elephant trunk model
+as well as various auxiliary quantities (e.g., precomputed arrays,
+interpolating functions) that improve performance.
+
+This structure is used the most in the simulation pipeline.
+
+$(TYPEDFIELDS)
+"""
 @with_kw struct TrunkFast{T, N}
     "Main trunk definition structure"
     trunk::Trunk{T, N}
@@ -261,6 +279,15 @@ end
     end
 end
 
+
+"""
+    $(TYPEDEF)
+
+Defines all quantities pertinent to the activated configuration
+of the trunk representation.
+
+$(TYPEDFIELDS)
+"""
 @with_kw struct ActivatedTrunkQuantities{T, N}
     trunkFast::TrunkFast{T, N}
     γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}}
