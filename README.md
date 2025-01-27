@@ -127,7 +127,9 @@ activationsGamma = CSV.read("ReachabilityCloudOutput/one_ring_three_fibers_gamma
                             CSV.Tables.matrix; header = false)
 ```
 
-To visualize the cloud, we can import `GLMakie` via `using GLMakie` and use the PlottingExt functionality of this package to generate the following animation:
+To visualize the cloud, we import `GLMakie` via `using GLMakie` and use the PlottingExt functionality of this package to generate the following animation:
+
+https://github.com/user-attachments/assets/c71d4287-fd44-4bd8-b8bc-6c7986b2ffaa
 
 In the above visualization, the points are color-coded using the `:thermal` colormap according to the activation magnitude in the third fiber.
 
