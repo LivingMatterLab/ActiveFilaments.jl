@@ -28,14 +28,16 @@ function generateIntrinsicReachVol(filament::AFilament,
 
     (activationsFourier, activationsGamma) = generateRandomActivations(
         activationGamma, gammaBounds, M, nTrajectories)
+        
+    println("Precomputation started...")
     @time precomputedQuantities = generatePrecomputedQuantitiesSA(
         filament,
         activationsFourier,
         prefactors,
         nTrajectories
     )
+    println("Precomputation complete.")
 
-    println("Generated precomputed")
     u0 = SVector{12, Float64}([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])
     Zspan = (0.0, filament.L)
     prob = ODEProblem(
@@ -130,7 +132,6 @@ function generateIntrinsicReachVolSym(filament::AFilament,
         nTrajectories,
         prefactors
     )
-    println("Generated precomputed")
 
     u_f = generateUFunctionsIntrinsic(filament, precomputedQuantities, worldage = worldage)
     println("Generated Runtime Functions")
@@ -211,7 +212,6 @@ function generateSelfWeightReachVol(filament::AFilament,
     )
     stiffness = filament.auxiliary.stiffness
     ρlin0Int = filament.auxiliary.ρlin0Int
-    println("Generated Precomputed")
 
     sol = []
     for gi in g_range
@@ -292,7 +292,6 @@ function generateSelfWeightReachVolSym(filament::AFilament,
         nTrajectories,
         prefactors
     )
-    println("Generated Precomputed")
 
     u_f = generateUFunctions(filament, precomputedQuantities)
     println("Generated Runtime Functions")
