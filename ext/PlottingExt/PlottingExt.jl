@@ -12,6 +12,7 @@ using Plots
 using Interpolations
 using Rotations
 using StaticArrays
+using DocStringExtensions
 
 """
     $(TYPEDSIGNATURES)
