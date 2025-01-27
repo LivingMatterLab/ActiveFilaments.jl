@@ -1,3 +1,7 @@
+#####################################################################################
+### Auxiliary functions converting mutable collections to static arrays or tuples ###
+#####################################################################################
+
 function convertUQuantToStatic_GPU(filament::AFilament, p::PrecomputedQuantities)
     M = length(filament.rings)
     A = MMatrix{M, 6, Float32}(zeros(M, 6))
@@ -20,6 +24,13 @@ function convertUQuantToStatic(
                p.ϕ[j], p.argTerms[j]) for j in 1:M])
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Converts precomputed quantities to a static
+matrix to speed up computation.
+
+"""
 function convertUQuantToStatic(
         filament::AFilament{0, M} where {M},
         p::PrecomputedQuantities{Float64, Float64}

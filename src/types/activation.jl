@@ -1,4 +1,6 @@
-# ######### Fiber activation structures
+###################################
+### Fiber activation structures ###
+###################################
 #region ===========================
 # Might change Num to Float32 below to check for compatibility with CUDA
 """

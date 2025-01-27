@@ -1,4 +1,6 @@
-######### Structures for formulaic precomputation and faster simulation
+#####################################################################
+### Structures for formulaic precomputation and faster simulation ###
+#####################################################################
 #region ===========================
 """
     $(TYPEDEF)

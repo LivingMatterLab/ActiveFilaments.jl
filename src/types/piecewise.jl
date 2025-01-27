@@ -1,4 +1,6 @@
-# PiecewiseStructure implementation
+#########################################
+### PiecewiseStructure implementation ###
+#########################################
 #region ===========================
 # abstract type PiecewiseStructure end
 """

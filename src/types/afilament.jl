@@ -1,4 +1,6 @@
-######### Active filament definition
+###################################################################
+### Structures relevant to the definition of an active filament ###
+###################################################################
 #region ===========================
 """
     $(TYPEDEF)
@@ -260,17 +262,20 @@ end
 
 Active filament structure (symbolic or numeric computation).
 
-Use Float64 if not using a GPU, since Float32 can have an impact on numerical solution accuracy.
+Use Float64 if not using a GPU, since Float32 can have an impact on numerical
+solution accuracy.
 
 No symbolic computation for tapered filaments is possible at this stage.
 
 A linear tapering profile is assumed if phi2 != 0; to be generalized.
 
-Important: Take care with very small values of phi2 (~phi2 < 0.0001), because there is a numerical
-instability in Θ2T(Z, phi) for (Z, phi) -> (0, 0) since we encounter Log(1) / Sin(0) in the linear profile. 
-Nonetheless, the actual configuration and the plots computed for very small phi2 will still be very close to correct 
-since only the tiny portion for Z -> 0 contributes to the overall error and the applied Z-interpolations
-effectively omit the instability anyway.
+Important: Take care with very small values of phi2 (~phi2 < 0.0001), because
+there is a numerical instability in Θ2T(Z, phi) for (Z, phi) -> (0, 0) since we
+encounter Log(1) / Sin(0) in the linear profile. Nonetheless, the actual
+configuration and the plots computed for very small phi2 will still be very
+close to correct since only the tiny portion for Z -> 0 contributes to the
+overall error and the applied Z-interpolations effectively omit the instability
+anyway.
 
 $(TYPEDFIELDS)
 """
@@ -299,7 +304,7 @@ $(TYPEDFIELDS)
     "Total mass (if tapered, assumes linear tapering)"
     m::Float64 = tapered ? ρvol * pi / 3.0 * L * (R0[1]^2 + R0[1] * R0[end] + R0[end]^2) :
                  ρvol * pi * R0 .^ 2 * L
-    "Auxiliary properties" # Double check if the Union here doesn't slow anything down!
+    "Auxiliary properties"
     auxiliary::AuxiliaryProperties{A}
 end
 
@@ -349,8 +354,10 @@ function AFilament(rings0::Vector{Ring{T}} where {T <: AbstractFloat};
 
         R0 = rings[end].geometry.R2
 
-        # expression = Val{false} prevents worldage issues when exporting with JLD2 (no "expression = Val{false}" causes the runtime generated function to not be
-        # save properly in JLD2). BUT it's possible that this needs to be changed in some cases
+        # expression = Val{false} prevents worldage issues when exporting with
+        # JLD2 (no "expression = Val{false}" causes the runtime generated
+        # function to not be save properly in JLD2). BUT it's possible that this
+        # needs to be changed in some cases
         ρlin0 = eval(
             build_function(
             simplify(pi * ρvol * (R0[1] - Zs * tan(phi2))^2),

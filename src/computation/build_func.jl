@@ -1,4 +1,6 @@
-######### Auxiliary functions for building fast functions from symbolic expressions
+#################################################################################
+### Auxiliary functions for building fast functions from symbolic expressions ###
+#################################################################################
 #region ===========================
 """
     $(TYPEDSIGNATURES)

@@ -1,3 +1,6 @@
+####################################
+### Random activation generators ###
+####################################
 """
     $(TYPEDSIGNATURES)
 
@@ -216,6 +219,17 @@ end
 
 Precomputes and returns all quantities necessary 
 to maximize the speedup of the reachability cloud computation.
+
+The function can take as input either tapered or non-tapered
+structures and either gamma or Fourier activation forms.
+
+If Vector{ActivationPiecewiseGamma} is passed as input, then a gammaBounds
+array has to be provided as well. The function will then sample random activations
+based on the form of activationGamma.
+
+If the Fourier activation format is needed instead, the function takes as input 
+Vector{Vector{ActivationFourier}} of pre-generated activations and uses
+those to precompute the necessary quantities.
 
 """
 function generatePrecomputedQuantitiesSA(

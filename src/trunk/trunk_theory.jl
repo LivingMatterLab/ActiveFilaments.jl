@@ -1,3 +1,8 @@
+######################################################################
+### Mathematical functions relevant to the elephant trunk modeling ###
+### expansion derived from the Active Filament theory.             ###
+### See: https://doi.org/10.1101/2024.10.27.620533                 ###
+######################################################################
 @enum Side right=1 left=2
 
 function (p::PiecewiseFunction{T, Float64} where {T})(x::Float64)

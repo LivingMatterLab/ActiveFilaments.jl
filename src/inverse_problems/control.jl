@@ -1,3 +1,7 @@
+#########################################################################
+### Functions used for control calculations (inverse problem solving) ###
+#########################################################################
+
 function flattenActivation(activations::AbstractArray{<:AbstractActivation}; static = false)
     n_act = [activation.N for activation in activations]
     n_act_total = sum(n_act)
@@ -56,6 +60,14 @@ function buildDistanceFunction(
     end
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Optimizes the fibrillar activation in a `filament` given a `controlObjective`
+and an `activation_structure`. The initial guess for the optimization is
+passed as input in `activation0`.
+
+"""
 function optimizeActivation(
         controlObjective::ConfigurationControlObjective,
         filament::AFilament{V, M, A} where {V, M, A},

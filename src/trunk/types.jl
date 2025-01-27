@@ -1,4 +1,8 @@
-
+#######################################################################
+### Mathematical structures relevant to the elephant trunk modeling ###
+### expansion derived from the Active Filament theory.              ###
+### See: https://doi.org/10.1101/2024.10.27.620533                  ###
+#######################################################################
 @enum Architecture longitudinal=1 helical=2 radial=3
 
 struct PiecewiseFunction{T, P}

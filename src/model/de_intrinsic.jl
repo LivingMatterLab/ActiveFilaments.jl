@@ -1,5 +1,7 @@
-######### Kirchhoff rod kinematics and mechanics
-######### Without external forces
+################################################################################
+### Kirchhoff rod kinematics and mechanics:                                  ###
+### Computation of activated filament configurations without external forces ###
+################################################################################
 #region ===========================
 """
     $(TYPEDSIGNATURES)

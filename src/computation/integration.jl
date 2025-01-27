@@ -48,8 +48,9 @@ function evaluate_integral_AD(ad::PiecewiseStructure, a::Number, b::Number)
     end
 end
 #endregion ===========================
-
-######### Auxiliary integration methods
+#####################################
+### Auxiliary integration methods ###
+#####################################
 #region ===========================
 """
     $(TYPEDSIGNATURES)

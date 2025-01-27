@@ -1,5 +1,7 @@
-######### Deprecated Legacy types and functions. 
-######### For use only with legacy code.
+######################################################
+### Deprecated Legacy types and functions.         ###
+### For use only with legacy code.                 ###
+######################################################
 #region ===========================
 struct MechanicalPropertiesSym
     E::Any

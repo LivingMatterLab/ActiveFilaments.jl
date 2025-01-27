@@ -1,5 +1,18 @@
-######### Functions for IVP solving
+###############################################
+### Functions for IVP configuration solving ###
+###############################################
 #region ===========================
+"""
+    $(TYPEDSIGNATURES)
+
+Solves for the activated configuration of a `filament` with 
+some prescribed fibrillar activation.
+
+Input parameters:
+-   `u0` = initial condition for the `u` solution
+-   `Zspan` = `Tuple` indicating the first and last `Z` value
+
+"""
 function solveIntrinsic(
         filament::AFilament,
         activation::Vector{ActivationFourier},

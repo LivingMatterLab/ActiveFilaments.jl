@@ -1,5 +1,7 @@
-######### Kirchhoff rod kinematics and mechanics
-######### With external forces
+############################################################################
+### Kirchhoff rod kinematics and mechanics:                              ###
+### Computation of deformed filament configurations with external forces ###
+############################################################################
 #region ===========================
 """
     $(TYPEDSIGNATURES)

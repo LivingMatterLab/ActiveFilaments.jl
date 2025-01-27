@@ -1,8 +1,11 @@
+################################################################
+### Metrics used for the analysis of configuration solutions ###
+################################################################
+
 # This is an estimate. It becomes exact with n -> Infinity
 function estimateTotalBending(
         sol::ODESolution,
-        filament,
-        refVector;
+        filament;
         n = 20,
         normal = [1.0, 0.0, 0.0]
 )
@@ -19,17 +22,25 @@ function estimateTotalBending(
     return totalBending
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Computes the total bending angle formed by the filament's
+`d3` director at `Z = L` relative to a `refVector`.
+
+Takes as input either a discrete `Vector` solution or an
+`ODESolution`.
+
+"""
 function bendingAngle(
         sol::ODESolution,
         filament,
         refVector;
-        largeAngle = false,
-        fullRev = false,
         n_bending = 20,
         normal = [1.0, 0.0, 0.0]
 )
     totalBending = estimateTotalBending(
-        sol, filament, refVector, n = n_bending, normal = normal)
+        sol, filament, n = n_bending, normal = normal)
     tangent_end = sol[end][10:12]
 
     angle_end = signedAngle(refVector, tangent_end, normal)
@@ -61,6 +72,16 @@ function bendingAngle(r::Vector, refVector)
            2 * pi - atan(norm(cross(end_vector, refVector)), dot(end_vector, refVector))
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Computes the Menger radius of a loop created by a filament
+from `Z = (1 - f1) * L` to `Z = (1 - f2) * L`.
+
+Takes as input either a discrete `Vector` solution or an
+`ODESolution`.
+
+"""
 function loopRadius(sol::ODESolution, filament; f1 = 1.0 / 5.0, f2 = 2.0 / 5.0)
     point1 = sol(filament.L)[1:3]
     point2 = sol(filament.L - filament.L * f1)[1:3]
@@ -99,6 +120,16 @@ function wrappingAngle(sol::ODESolution, refVector)
     return angle
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Computes the tilt angle of a portion of the filament between 
+`Z = (1 - f2) * L` and `Z = (1 - f1) * L`.
+
+Takes as input either a discrete `Vector` solution or an
+`ODESolution`.
+
+"""
 function tiltAngle(
         sol::ODESolution,
         filament,
@@ -119,6 +150,15 @@ function tiltAngle(
     return angleBetweenVectors(n, planeNormal)
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Computes the capped tilt angle of a portion of the filament between 
+`Z = (1 - f2) * L` and `Z = (1 - f1) * L`.
+
+Takes as input an `ODESolution` for the filament's configuration.
+
+"""
 function tiltAngleCapped(
         sol::ODESolution,
         filament,
@@ -243,6 +283,18 @@ function fiberLengthRef(fiberID::FiberID, filament, activation_structure)
     return integral
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Computes the strain in a fiber given by `fiberID`, for a configuration solution `sol`.
+
+Limitations:
+- only for non-tapered filaments
+- currently works only if there is one fiber per ring. For this to work
+  with rings with multiple fibers, need to change θ0 to the angle for a
+  particular fiber in a ring given FiberID (not just θ0 for the whole ring)
+
+"""
 function fiberStrain(fiberID::FiberID, sol::ODESolution, filament, activation_structure)
     return fiberLength(fiberID, sol, filament, activation_structure) /
            fiberLengthRef(fiberID, filament, activation_structure) - 1.0

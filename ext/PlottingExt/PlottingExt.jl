@@ -1,4 +1,7 @@
-### The plotting module extension
+#####################################################
+### The main plotting module extension.           ###
+### All visualization functions are defined here. ###
+#####################################################
 module PlottingExt
 
 using ActiveFilaments

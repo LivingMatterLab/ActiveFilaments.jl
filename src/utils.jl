@@ -1,6 +1,17 @@
-### Additional utility structs and functions
+################################################
+### Additional utility structs and functions ###
+################################################
+"""
+    $(TYPEDEF)
+
+Identifies a particular fiber in a given ring.
+
+$(TYPEDFIELDS)
+"""
 mutable struct FiberID
+    "Index of the fiber ring"
     ringIndex::Number
+    "Index of the fiber within the ring"
     fiberIndex::Number
 end
 

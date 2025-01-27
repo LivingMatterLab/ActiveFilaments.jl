@@ -1,4 +1,6 @@
-######### Functions for BVP solving
+#################################
+### Functions for BVP solving ###
+#################################
 #region ===========================
 """
     $(TYPEDSIGNATURES)
@@ -12,8 +14,9 @@ Input parameters:
 -   `uInit` = initial guess for the `u` solution
 -   `g_range` = range of gravitational acceleration values to step through
 
-The gravitational acceleration stepping is necessary to ensure robust convergence
-to a BVP solution. Typically, as little as 4 steps might be sufficient.
+Depending on the selected BVP solver, the gravitational acceleration stepping 
+can be necessary to ensure robust convergence to a BVP solution. 
+Typically, as little as 4 steps is sufficient.
 """
 function selfWeightSolve(
         filament::AFilament{T, M, A} where {T, M, A},
@@ -96,8 +99,9 @@ Input parameters:
 -   `uInit` = initial guess for the `u` solution
 -   `g_range` = range of gravitational acceleration values to step through
 
-The gravitational acceleration stepping is necessary to ensure robust convergence
-to a BVP solution. Typically, as little as 4 steps might be sufficient.
+Depending on the selected BVP solver, the gravitational acceleration stepping 
+can be necessary to ensure robust convergence to a BVP solution. 
+Typically, as little as 4 steps is sufficient.
 """
 function selfWeightSolveSym(
         filament::AFilament{T, M, A} where {T, M, A},

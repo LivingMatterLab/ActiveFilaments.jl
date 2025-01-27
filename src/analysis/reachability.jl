@@ -1,6 +1,22 @@
+##########################################
+### Computation of reachability clouds ###
+##########################################
 
 ######### Intrinsic reachability clouds, without external loading
 #region ===========================
+"""
+    $(TYPEDSIGNATURES)
+
+Generates an intrinsic reachability cloud of a given `filament`
+with an activation form `activationGamma`. The reachability cloud
+consists of `nTrajectories` activated configurations 
+computed without external loading.
+
+The cloud data is saved to files in `path`. Setting `save_gamma_structs = false`
+can be used to omit the generation of potentially large data files containing
+the full gamma structures for all configurations.
+
+"""
 function generateIntrinsicReachVol(filament::AFilament,
         activationGamma::Vector{ActivationPiecewiseGamma},
         gammaBounds,
@@ -166,13 +182,24 @@ end
 
 ######### Reachability clouds with external loading (self-weight)
 #region ===========================
+"""
+    $(TYPEDSIGNATURES)
+
+Generates a reachability cloud of a given `filament`
+with an activation form `activationGamma`. The reachability cloud
+consists of `nTrajectories` deformed configurations 
+computed with the consideration of the filament's weight. 
+
+Setting `save_full = true` outputs the entire BVP solution for
+each configuration.
+
+"""
 function generateSelfWeightReachVol(filament::AFilament,
         activationGamma::Vector{ActivationPiecewiseGamma},
         gammaBounds,
         uInit::Vector{Vector{Float64}},
         g_range::StepRangeLen,
         nTrajectories::Int;
-        path::String = "",
         save_full = false)
     prefactors = computePropertyPrefactors(filament)
     (precomputedQuantities, activationsGamma) = generatePrecomputedQuantitiesSA(
@@ -237,14 +264,25 @@ function generateSelfWeightReachVol(filament::AFilament,
     (sol, activationsGamma)
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Generates a reachability cloud of a given `filament`
+with an activation form `activationGamma`. The reachability cloud
+consists of `nTrajectories` deformed configurations 
+computed with the consideration of the filament's weight. This
+function is intended for symbolic computation.
+
+Setting `save_full = true` outputs the entire BVP solution for
+each configuration.
+
+"""
 function generateSelfWeightReachVolSym(filament::AFilament,
         activationGamma::Vector{ActivationPiecewiseGamma},
         gammaBounds,
         uInit::Vector{Vector{Float64}},
         g_range::StepRangeLen,
         nTrajectories::Int;
-        path::String = "",
-        worldage = true,
         save_full = false)
     prefactors = computePropertyPrefactorsSym(filament)
     (precomputedQuantities, activationsGamma) = generatePrecomputedQuantitiesSym(

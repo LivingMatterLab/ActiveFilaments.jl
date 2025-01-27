@@ -92,13 +92,24 @@ export
        d1,
        d2,
        d3,
-       build_distance_function,
-        
+
+       plotReachabilityCloudRGB,
+       plotReachabilityCloud,
+       plotReachabilityCloudRGBSlice,
+       plotReachabilityCloudSlice,
+       plotFilamentCollapsedRings!,
+       plotConfigurationsSelfWeight!,
+       plotConfigurationTubesSelfWeight!,
+
+       # Trunk modeling package expansion
        Trunk,
        TrunkFast,
        ActivatedTrunkQuantities,
+
+       # Functions with the underscore naming convention
+       # correspond to the trunk modeling expansion
+       # of the package
        constant_activation,
-       computeH,
        self_weight_solve,
        build_trunk_bvp,
        build_trunk_wrap_bvp,
@@ -109,15 +120,9 @@ export
        rotate_bc,
        build_trunk_ivp,
        ivp_solve_single,
-       compute_R_factor_current, 
-       
-       plotReachabilityCloudRGB,
-       plotReachabilityCloud,
-       plotReachabilityCloudRGBSlice,
-       plotReachabilityCloudSlice,
-       plotFilamentCollapsedRings!,
-       plotConfigurationsSelfWeight!,
-       plotConfigurationTubesSelfWeight!, 
+       compute_R_factor_current,
+       build_distance_function,
+
        plot_trunk!,
        plot_trunk_exploded!,
        plot_trunk_isolated!

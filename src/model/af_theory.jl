@@ -1,4 +1,6 @@
-######### AF theory quantities and functions
+#####################################################################
+### Mathematical functions relevant to the Active Filament theory ###
+#####################################################################
 #region ===========================
 """
     $(TYPEDSIGNATURES)

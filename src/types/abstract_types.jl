@@ -1,4 +1,6 @@
-######### Abstract supertypes
+#########################################################################
+### Abstract supertypes for the Active Filament theory implementation ###
+#########################################################################
 #region ===========================
 """
 Abstract supertype for various filament design properties
