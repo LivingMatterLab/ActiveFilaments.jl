@@ -13,6 +13,12 @@ using Interpolations
 using Rotations
 using StaticArrays
 
+"""
+    $(TYPEDSIGNATURES)
+
+Plots the reachability cloud with RGB color-coding, given the
+configuration solutions `sols`.
+"""
 function ActiveFilaments.plotReachabilityCloudRGB(sols, activationsGamma::Matrix{Float64},
         gammaBounds, axesLimits;
         gravity = false, full_solution = false, flipped = false, showBox = true,
@@ -122,6 +128,13 @@ function ActiveFilaments.plotReachabilityCloudRGB(sols, activationsGamma::Matrix
     fig
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Plots the reachability cloud, given the
+configuration solutions `sols`. The color-coding
+is defined by `colormap`.
+"""
 function ActiveFilaments.plotReachabilityCloud(sols, activationsGamma::Matrix{Float64},
         activationIndex::Integer, gammaBounds, axesLimits;
         gravity = false, full_solution = false, flipped = false, showBox = true,
@@ -239,6 +252,13 @@ function ActiveFilaments.plotReachabilityCloud(sols, activationsGamma::Matrix{Fl
     fig
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Plots the reachability cloud slice with RGB color-coding, given the
+configuration solutions `sols`, a slice angle `angle`, and a slice thickness
+`sliceThickness`.
+"""
 function ActiveFilaments.plotReachabilityCloudRGBSlice(sols,
         activationsGamma::Matrix{Float64}, gammaBounds, angle, sliceThickness, axesLimits;
         gravity = false, full_solution = false, flipped = false,
@@ -328,6 +348,13 @@ function ActiveFilaments.plotReachabilityCloudRGBSlice(sols,
     fig
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Plots the reachability cloud slice, given the
+configuration solutions `sols`, a slice angle `angle`, and a slice thickness
+`sliceThickness`. The color-coding is defined by `colormap`.
+"""
 function ActiveFilaments.plotReachabilityCloudSlice(
         sols, activationsGamma::Matrix{Float64},
         activationIndex::Integer, gammaBounds, angle, sliceThickness, axesLimits;
@@ -709,6 +736,13 @@ function plotConfigurationTubesSelfWeight!(filament, activation_structure, activ
     end
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Plots the `filament` with an activation format `activation_structure`,
+and a configuration solution `sol` for the case of multiple overlapping
+rings.
+"""
 function ActiveFilaments.plotFilamentCollapsedRings!(
         filament::AFilament{1},
         activation_structure,
@@ -721,7 +755,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(
         perturb_deviation = 0.0,
         colors = [:yellow, :orange, :blue]
 )
-    Θ = range(0, 2 * pi, n) # Flip sign to flip normals
+    Θ = range(0, 2 * pi, n)
 
     Z = filament.Z
     R_outer = standard_core ? cubic_spline_interpolation(Z, filament.rings[1].geometry.R2) :
@@ -1045,6 +1079,14 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0},
     end
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Plots the `filament` with an activation format `activation_structure`,
+for all sets of fibrillar activations provided in `activations` assuming
+the self-weight loading scenario. This plotting function visualizes a simplified
+tubular representation of the deformed `filament`.
+"""
 function ActiveFilaments.plotConfigurationTubesSelfWeight!(filament, activation_structure,
         activations;
         m0 = [0.0, 0.0, 0.0],
@@ -1083,6 +1125,13 @@ function ActiveFilaments.plotConfigurationTubesSelfWeight!(filament, activation_
     end
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Plots the `filament` with an activation format `activation_structure`,
+for all sets of fibrillar activations provided in `activations` assuming
+the self-weight loading scenario.
+"""
 function ActiveFilaments.plotConfigurationsSelfWeight!(
         filament,
         activation_structure,
@@ -1126,6 +1175,9 @@ function ActiveFilaments.plotConfigurationsSelfWeight!(
     end
 end
 
+##########################################################
+### Plotting functions for the Trunk package expansion ###
+##########################################################
 function extract_xyz(out, flipped)
     x = getindex.(out, 1) * (flipped ? -1 : 1)
     y = getindex.(out, 2)
@@ -1324,6 +1376,13 @@ function plot_outer_trunk!(
     )
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Plots a standard visualization of the trunk `trunk_sim` 
+for a configuration solution `sol`, and the auxiliary 
+struct `a` of type `ActivatedTrunkQuantities`.
+"""
 function ActiveFilaments.plot_trunk!(
         trunk_sim::TrunkFast{T, N},
         sol,
@@ -1340,7 +1399,7 @@ function ActiveFilaments.plot_trunk!(
     R2 = trunk_sim.interpolations.R2
 
     @time R_factor = compute_R_factor_current(trunk_sim.trunk, sol)
-    println(a.R_factor)
+    
     plot_outer_trunk!(
         trunk,
         sol,
@@ -1395,6 +1454,15 @@ function ActiveFilaments.plot_trunk!(
     end
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Plots an isolated set of muscles of the trunk `trunk_sim` 
+for a configuration solution `sol`, the auxiliary struct
+`a` of type `ActivatedTrunkQuantities`,
+the indices `muscle_indices` of the muscles to be plotted, and
+the `colors` of the muscle surfaces.
+"""
 function ActiveFilaments.plot_trunk_isolated!(
         trunk_sim::TrunkFast{T, N},
         sol,
@@ -1588,6 +1656,13 @@ function plot_muscle_exploded!(
     )
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Plots an exploded view of the muscles of the trunk `trunk_sim` for
+the activated trunk quantities `a` of type `ActivatedTrunkQuantities`,
+and the maximum activation magnitude `max_abs_γ` across all muscles. 
+"""
 function ActiveFilaments.plot_trunk_exploded!(trunk_sim::TrunkFast{T, N},
         a::ActivatedTrunkQuantities{T, N}, max_abs_γ::Float64; n = 40,
         colors = [:orange, :magenta, :cyan, :red, :blue],
