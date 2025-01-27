@@ -211,6 +211,13 @@ function generatePrecomputedQuantitiesGPU(
     precomputedQuantities
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Precomputes and returns all quantities necessary 
+to maximize the speedup of the reachability cloud computation.
+
+"""
 function generatePrecomputedQuantitiesSA(
         filament::AFilament{1, M, A} where {M, A},
         activationGamma::Vector{ActivationPiecewiseGamma},
@@ -228,7 +235,7 @@ function generatePrecomputedQuantitiesSA(
                              p.uPrefactors[j].pre_u2,
                              p.uPrefactors[j].pre_u3,
                              p.ϕ[j], p.argTerms[j]) for j in 1:M]) for p in p_all]),
-    activationsGamma
+            activationsGamma
 end
 
 function generatePrecomputedQuantitiesSA(

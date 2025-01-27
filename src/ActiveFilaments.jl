@@ -1,5 +1,10 @@
 """
-Main module based on the Active Filament theory.
+Main parent module. 
+Package based on the Active Filament theory, see:
+
+Kaczmarski, B., Moulton, D. E., Kuhl, E. & Goriely, A. 
+Active filaments I: Curvature and torsion generation. 
+Journal of the Mechanics and Physics of Solids 164, 104918 (2022).
 
 Packages used in the module:
 $(IMPORTS)
@@ -52,29 +57,44 @@ export
        AFilament,
        InnerTube,
        FilamentStiffness,
+
        ActivationPiecewiseGamma,
        ActivationFourier,
-       FiberID, piecewiseGammaToFourier,
+
+       FiberID, 
+
+       piecewiseGammaToFourier,
        computePropertyPrefactors,
        computeUQuantities,
        computeUHat,
+
        generatePrecomputedQuantitiesSA,
-       convertUQuantToStatic, selfWeightSolve,
+
+       convertUQuantToStatic, 
+
+       selfWeightSolve,
        selfWeightSolveSym,
        solveIntrinsic,
+
        generateIntrinsicReachVol,
        generateSelfWeightReachVol,
-       generateSelfWeightReachVolSym, loopRadius,
+       generateSelfWeightReachVolSym, 
+
+       loopRadius,
        bendingAngle,
        tiltAngle,
        tiltAngleCapped,
-       fiberStrain, ConfigurationControlObjective,
+       fiberStrain, 
+
+       ConfigurationControlObjective,
        optimizeActivation,
        r,
        d1,
        d2,
        d3,
-       build_distance_function, Trunk,
+       build_distance_function,
+        
+       Trunk,
        TrunkFast,
        ActivatedTrunkQuantities,
        constant_activation,
@@ -89,13 +109,16 @@ export
        rotate_bc,
        build_trunk_ivp,
        ivp_solve_single,
-       compute_R_factor_current, plotReachabilityCloudRGB,
+       compute_R_factor_current, 
+       
+       plotReachabilityCloudRGB,
        plotReachabilityCloud,
        plotReachabilityCloudRGBSlice,
        plotReachabilityCloudSlice,
        plotFilamentCollapsedRings!,
        plotConfigurationsSelfWeight!,
-       plotConfigurationTubesSelfWeight!, plot_trunk!,
+       plotConfigurationTubesSelfWeight!, 
+       plot_trunk!,
        plot_trunk_exploded!,
        plot_trunk_isolated!
 

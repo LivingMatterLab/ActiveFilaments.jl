@@ -450,7 +450,7 @@ function AFilament(rings::Vector{Ring{T}} where {T <: AbstractVector};
         interp(Z, stiffness.K1),
         interp(Z, stiffness.K2),
         interp(Z, stiffness.K3)
-                    ]) :
+    ]) :
                     SVector{4, Float64}([
         stiffness.K0, stiffness.K1, stiffness.K2, stiffness.K3])
     auxProp = AuxiliaryProperties(ρlin0, ρlin0Int, stiffness_aux)
