@@ -13,6 +13,7 @@ Run the following command in Julia 1.10.0+:
 Wait for all dependencies to precompile. Slowdowns are possible during precompilation in parallelized BVP solutions if Julia version 1.9.0 or older is used.
 
 # Example usage
+## Computing an activated configuration
 In the simplest case of uniform material properties and a single fiber ring, we can define an active filament by running
 ```julia
 using ActiveFilaments
@@ -25,12 +26,12 @@ mech = MechanicalProperties(E, ν)
 
 # Geometry of the ring
 L = 1.0 # Length of the filament
-R2 = L / 20.0 # Outer radius of the ring
-R1 = R2 * 0.8 # Inner radius of the ring
+R2 = L / 16.0 # Outer radius of the ring
+R1 = R2 * 0.6 # Inner radius of the ring
 geom = Geometry(R1, R2)
 
 # Fiber architecture of the ring
-α2 = pi / 8.0 # Outer helical angle of the fiber architecture
+α2 = pi / 10.0 # Outer helical angle of the fiber architecture
 arch = FiberArchitecture(α2)
 
 # Define the filament structure
@@ -46,24 +47,89 @@ The deformation due to the above activation without external loading can then be
 sol = solveIntrinsic(filament, activation)
 ```
 The resulting `sol` structure contains the following interpolating functions:
-$$\texttt{sol}(Z) = \big[r_X(Z), r_Y(Z), r_Z(Z), d_{1X}(Z), d_{1Y}(Z), d_{1Z}(Z), d_{2X}(Z), d_{2Y}(Z), d_{2Z}(Z), d_{3X}(Z), d_{3Y}(Z), d_{3Z}(Z)\big]$$
+$$\texttt{sol}(Z) = \big[r_X(Z), r_Y(Z), r_Z(Z), d_{1X}(Z), d_{1Y}(Z), d_{1Z}(Z), d_{2X}(Z), d_{2Y}(Z), d_{2Z}(Z), d_{3X}(Z), d_{3Y}(Z), d_{3Z}(Z)\big]$$.
+
 For example, evaluating `sol` at $L / 10$ gives
 ```
 julia> sol(L / 10.0)
 12-element StaticArraysCore.SVector{12, Float64} with indices SOneTo(12):
-  0.008311388337878088
-  0.009719221098605893
-  0.09072971511373011
-  0.9421455745518371
- -0.32511595347415
- -0.0816169905655878
-  0.294271010395179
-  0.9188022897556413
- -0.2630720904634142
-  0.16051881133807738
-  0.2238346915390569
-  0.9613177113058022
+  0.010887432435510243
+  0.010588028536001756
+  0.08230390930976722
+  0.9378971336343721
+ -0.3068269347479843
+ -0.16188328769080979
+  0.24481737934065784
+  0.9160122985605073
+ -0.31778281838178346
+  0.24579141053584871
+  0.25841575222701285
+  0.9342418752698606
 ```
+## Computing and plotting a reachability cloud
+Let us continue with the filament defined in the previous example. For the three-sector design of the ring, we can define the bounds on the activation
+sampling region as:
+```julia
+γBounds = [([-2.4, -2.0, -2.7], [0.0, 0.0, 0.0])]
+```
+Note that the array contains only one `Tuple` since the filament has a single fiber ring. In the above example, the activation bounds are such that
+$$\gamma\in[-2.4,0]$$ in the first sector, $$\gamma\in[-2,0]$$, in the second sector, and $$\gamma\in[-2.7,0]$$ in the third sector.
+
+We then specify the number of configurations to compute during cloud generation:
+```julia
+nTrajectories = 2000000
+```
+2 million configurations typically take no more than 10 seconds to compute.
+
+We then indicate a custom directory and file path for the cloud data:
+```julia
+dir = "ReachabilityCloudOutput"
+path = string(dir, "/one_ring_three_fibers")
+```
+
+We can now simply call `generateIntrinsicReachVol` to generate a reachability cloud for activated configurations (without external loading)
+bounded by `γBounds`.
+```julia
+(sol, activationsGamma) = generateIntrinsicReachVol(
+    filament, activation, γBounds, nTrajectories, path; 
+    save_gamma_structs = false)
+```
+An output similar to the one shown below should appear (time and memory allocation values will be different):
+```julia
+Precomputation started...
+  1.825260 seconds (190.00 M allocations: 7.615 GiB, 34.44% gc time)
+Precomputation complete.
+Computing cloud...
+  2.811433 seconds (58.00 M allocations: 8.285 GiB)
+Cloud computed!
+Saving...
+Saved!
+```
+In the `generateIntrinsicReachVol` function call, `activation` serves as an activation structure indicator for the reachability cloud generator. Setting the flag `save_gamma_structs` to `false` 
+saves the activation samples in a simple `.csv` file.
+
+To use the output data effectively, we can also save the filament and activation data created before:
+```julia
+using JLD2
+@save string(dir, "/filament.jld2") filament
+@save string(dir, "/gammaBounds.jld2") γBounds
+@save string(dir, "/activationStructure.jld2") activation
+```
+
+In a new script, we can import all the data as follows:
+```julia
+using JLD2
+using CSV
+@load "ReachabilityCloudOutput/one_ring_three_fibers.jld2" sol
+@load "ReachabilityCloudOutput/filament.jld2" filament
+@load "ReachabilityCloudOutput/gammaBounds.jld2" γBounds
+activationsGamma = CSV.read("ReachabilityCloudOutput/one_ring_three_fibers_gamma.csv" , 
+                            CSV.Tables.matrix; header = false)
+```
+
+To visualize the cloud, we can import `GLMakie` via `using GLMakie` and use the PlottingExt functionality of this package to generate the following animation:
+
+In the above visualization, the points are color-coded using the `:thermal` colormap according to the activation magnitude in the third fiber.
 
 # Other work that uses this package
 [Kaczmarski, B., Moulton, D. E., Goriely, Z., Goriely, A. & Kuhl, E. Ultra-fast physics-based modeling of the elephant trunk. _bioRxiv_ 2024.10.27.620533 (2024).](https://doi.org/10.1101/2024.10.27.620533)
