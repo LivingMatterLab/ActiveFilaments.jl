@@ -30,11 +30,11 @@ mutable struct ActivationPiecewiseGamma <: AbstractActivationPiecewise
     "Number of angular sectors"
     N::Int
     "Array of activation magnitudes for each sector"
-    γ
+    γ::Any
     "Angular extent of each sector"
-    σ
+    σ::Any
     "Angular offset of each sector"
-    θ0
+    θ0::Any
 end
 
 """
@@ -64,7 +64,7 @@ struct ActivationFourier{T} <: AbstractActivationPiecewise
     # Assumes constant a0 (this is the case if the number of fibers, 
     # σ etc. doesn't change with Z); a0 is still constant if α2 or θ0 changes
     "Coefficient 1"
-    a0::Float64 
+    a0::Float64
     "Coefficient 2"
     a1::T
     "Coefficient 3"

@@ -201,7 +201,7 @@ Note: this function is NOT in-place.
 """
 function intrinsicConfDE(u, p, Z)
     ζ_hat, u1_hat, u2_hat, u3_hat = computeUHatSym(Z, p)
-    du = MVector{12,Float64}(zeros(12))
+    du = MVector{12, Float64}(zeros(12))
     du[1:3] = ζ_hat * u[10:12]
     du[4:6] = ζ_hat * (u3_hat * u[7:9] - u2_hat * u[10:12])
     du[7:9] = ζ_hat * (u1_hat * u[10:12] - u3_hat * u[4:6])

@@ -10,9 +10,9 @@ The output also includes the extension antiderivative `ζ_hat_AD` used in comput
 with external forces.
 """
 function buildUFunctions(
-    filament::AFilament,
-    precomputedQuantities::PrecomputedQuantities;
-    worldage = true,
+        filament::AFilament,
+        precomputedQuantities::PrecomputedQuantities;
+        worldage = true
 )
     u = computeUHatSym(filament.Z, precomputedQuantities)
 
@@ -43,9 +43,9 @@ Builds fast runtime generated functions for `ζ_hat`, `u1_hat`, `u2_hat`, `u3_ha
 based on their respective symbolic expressions.
 """
 function buildUFunctionsIntrinsic(
-    filament::AFilament,
-    precomputedQuantities::PrecomputedQuantities;
-    worldage = true,
+        filament::AFilament,
+        precomputedQuantities::PrecomputedQuantities;
+        worldage = true
 )
     u = computeUHatSym(filament.Z, precomputedQuantities)
     uf = Vector{Any}()

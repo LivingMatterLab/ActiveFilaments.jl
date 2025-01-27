@@ -2,32 +2,32 @@
 ######### Intrinsic reachability clouds, without external loading
 #region ===========================
 function generateIntrinsicReachVol(filament::AFilament,
-    activationGamma::Vector{ActivationPiecewiseGamma},
-    gammaBounds,
-    nTrajectories::Int,
-    path::String;
-    save_gamma_structs = true)
+        activationGamma::Vector{ActivationPiecewiseGamma},
+        gammaBounds,
+        nTrajectories::Int,
+        path::String;
+        save_gamma_structs = true)
     prefactors = computePropertyPrefactors(filament)
     M = typeof(filament).parameters[2]
 
-    (activationsFourier, activationsGamma) =
-        generateRandomActivations(activationGamma, gammaBounds, M, nTrajectories)
+    (activationsFourier, activationsGamma) = generateRandomActivations(
+        activationGamma, gammaBounds, M, nTrajectories)
     @time precomputedQuantities = generatePrecomputedQuantitiesSA(
         filament,
         activationsFourier,
         prefactors,
-        nTrajectories,
+        nTrajectories
     )
 
     println("Generated precomputed")
-    u0 = SVector{12,Float64}([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])
+    u0 = SVector{12, Float64}([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])
     Zspan = (0.0, filament.L)
     prob = ODEProblem(
         intrinsicConfDESA,
         u0,
         Zspan,
         precomputedQuantities[1],
-        save_everystep = false,
+        save_everystep = false
     )
 
     prob_func = let p = precomputedQuantities
@@ -42,7 +42,7 @@ function generateIntrinsicReachVol(filament::AFilament,
         prob,
         prob_func = prob_func,
         output_func = output_func,
-        safetycopy = false,
+        safetycopy = false
     )
 
     println("Computing cloud...")
@@ -52,7 +52,7 @@ function generateIntrinsicReachVol(filament::AFilament,
         EnsembleThreads(),
         trajectories = nTrajectories,
         adaptive = false,
-        dt = filament.L / 100.0,
+        dt = filament.L / 100.0
     )
     println("Cloud computed!")
 
@@ -66,12 +66,12 @@ function generateIntrinsicReachVol(filament::AFilament,
             n_act = [activation.N for activation in activationsGamma[1]]
             n_act_total = sum(n_act)
             running_totals = cumsum(n_act)
-            idxs = [
-                i == 1 ? (1:running_totals[1]) : (running_totals[i-1]+1:running_totals[i]) for
-                i in eachindex(running_totals)
-            ]
-            activations_unrolled = MMatrix{nTrajectories,n_act_total,Float64}(undef)
-            for i = 1:nTrajectories
+            idxs = [i == 1 ? (1:running_totals[1]) :
+                    ((running_totals[i - 1] + 1):running_totals[i])
+                    for
+                    i in eachindex(running_totals)]
+            activations_unrolled = MMatrix{nTrajectories, n_act_total, Float64}(undef)
+            for i in 1:nTrajectories
                 for j in eachindex(idxs)
                     activations_unrolled[i, idxs[j]] .= activationsGamma[i][j].γ
                 end
@@ -82,7 +82,7 @@ function generateIntrinsicReachVol(filament::AFilament,
             CSV.write(
                 string(path, "_gamma.csv"),
                 Tables.table(activations_unrolled),
-                writeheader = false,
+                writeheader = false
             )
         end
 
@@ -101,18 +101,18 @@ function generateIntrinsicReachVol(filament::AFilament,
 end
 
 function generateIntrinsicReachVolSym(filament::AFilament,
-    activationGamma::Vector{ActivationPiecewiseGamma},
-    gammaBounds,
-    nTrajectories::Int,
-    path::String;
-    worldage = true)
+        activationGamma::Vector{ActivationPiecewiseGamma},
+        gammaBounds,
+        nTrajectories::Int,
+        path::String;
+        worldage = true)
     prefactors = computePropertyPrefactors(filament)
     precomputedQuantities = generatePrecomputedQuantities(
         filament,
         activationGamma,
         gammaBounds,
         nTrajectories,
-        prefactors,
+        prefactors
     )
     println("Generated precomputed")
 
@@ -135,7 +135,7 @@ function generateIntrinsicReachVolSym(filament::AFilament,
         prob,
         prob_func = prob_func,
         output_func = output_func,
-        safetycopy = false,
+        safetycopy = false
     )
 
     @time sol = solve(
@@ -144,7 +144,7 @@ function generateIntrinsicReachVolSym(filament::AFilament,
         EnsembleThreads(),
         trajectories = nTrajectories,
         adaptive = false,
-        dt = filament.L / 100,
+        dt = filament.L / 100
     )
 
     @save string(path, ".jld2") sol
@@ -167,20 +167,20 @@ end
 ######### Reachability clouds with external loading (self-weight)
 #region ===========================
 function generateSelfWeightReachVol(filament::AFilament,
-    activationGamma::Vector{ActivationPiecewiseGamma},
-    gammaBounds,
-    uInit::Vector{Vector{Float64}},
-    g_range::StepRangeLen,
-    nTrajectories::Int;
-    path::String = "",
-    save_full = false)
+        activationGamma::Vector{ActivationPiecewiseGamma},
+        gammaBounds,
+        uInit::Vector{Vector{Float64}},
+        g_range::StepRangeLen,
+        nTrajectories::Int;
+        path::String = "",
+        save_full = false)
     prefactors = computePropertyPrefactors(filament)
     (precomputedQuantities, activationsGamma) = generatePrecomputedQuantitiesSA(
         filament,
         activationGamma,
         gammaBounds,
         nTrajectories,
-        prefactors,
+        prefactors
     )
     stiffness = filament.auxiliary.stiffness
     ρlin0Int = filament.auxiliary.ρlin0Int
@@ -188,7 +188,8 @@ function generateSelfWeightReachVol(filament::AFilament,
 
     sol = []
     for gi in g_range
-        pAll = [(gi, ρlin0Int, stiffness, precomputedQuantities[i]) for i = 1:nTrajectories]
+        pAll = [(gi, ρlin0Int, stiffness, precomputedQuantities[i])
+                for i in 1:nTrajectories]
         Zspan = (0.0, filament.L)
 
         bvp = BVProblem(selfWeightDE!, selfWeightBC!, uInit[1], Zspan, pAll[1])
@@ -207,7 +208,7 @@ function generateSelfWeightReachVol(filament::AFilament,
                 bvp,
                 prob_func = prob_func,
                 output_func = output_func,
-                safetycopy = false,
+                safetycopy = false
             )
         end
 
@@ -219,7 +220,7 @@ function generateSelfWeightReachVol(filament::AFilament,
             trajectories = nTrajectories,
             dt = filament.L / 20.0,
             abstol = 1e-12,
-            reltol = 1e-12,
+            reltol = 1e-12
         )
         println("Finished solving...")
 
@@ -237,21 +238,21 @@ function generateSelfWeightReachVol(filament::AFilament,
 end
 
 function generateSelfWeightReachVolSym(filament::AFilament,
-    activationGamma::Vector{ActivationPiecewiseGamma},
-    gammaBounds,
-    uInit::Vector{Vector{Float64}},
-    g_range::StepRangeLen,
-    nTrajectories::Int;
-    path::String = "",
-    worldage = true,
-    save_full = false)
+        activationGamma::Vector{ActivationPiecewiseGamma},
+        gammaBounds,
+        uInit::Vector{Vector{Float64}},
+        g_range::StepRangeLen,
+        nTrajectories::Int;
+        path::String = "",
+        worldage = true,
+        save_full = false)
     prefactors = computePropertyPrefactorsSym(filament)
     (precomputedQuantities, activationsGamma) = generatePrecomputedQuantitiesSym(
         filament,
         activationGamma,
         gammaBounds,
         nTrajectories,
-        prefactors,
+        prefactors
     )
     println("Generated Precomputed")
 
@@ -260,7 +261,7 @@ function generateSelfWeightReachVolSym(filament::AFilament,
 
     sol = []
     for gi in g_range
-        pAll = [(gi, filament, u_f[i]) for i = 1:nTrajectories]
+        pAll = [(gi, filament, u_f[i]) for i in 1:nTrajectories]
         Zspan = (0.0, filament.L)
 
         bvp = BVProblem(selfWeightDESym!, selfWeightBC!, uInit[1], Zspan, pAll[1])
@@ -279,7 +280,7 @@ function generateSelfWeightReachVolSym(filament::AFilament,
                 bvp,
                 prob_func = prob_func,
                 output_func = output_func,
-                safetycopy = false,
+                safetycopy = false
             )
         end
 
@@ -291,7 +292,7 @@ function generateSelfWeightReachVolSym(filament::AFilament,
             trajectories = nTrajectories,
             dt = filament.L / 20.0,
             abstol = 1e-12,
-            reltol = 1e-12,
+            reltol = 1e-12
         )
         println("Finished solving...")
 

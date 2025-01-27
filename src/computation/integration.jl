@@ -38,9 +38,9 @@ function evaluate_integral_AD(ad::PiecewiseStructure, a::Number, b::Number)
             end
         elseif (b >= range[1] && b <= range[2])
             result = expression(b) - expression(range[1])
-            for i = length(expressions_a):-1:2
-                result +=
-                    expressions_a[i](ranges_a[i][2]) - expressions_a[i](ranges_a[i][1])
+            for i in length(expressions_a):-1:2
+                result += expressions_a[i](ranges_a[i][2]) -
+                          expressions_a[i](ranges_a[i][1])
             end
             result += expressions_a[1](ranges_a[1][2]) - expressions_a[1](a)
             return sign * result

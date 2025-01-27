@@ -40,8 +40,8 @@ FilamentStiffnessSym(K) = FilamentStiffnessSym(K[1], K[2], K[3], K[4]);
     L = 1.0
     rings::Vector{RingSym}
     R0 = rings[end].geometry.R2
-    innerTube::InnerTubeSym =
-        InnerTubeSym(rings[1].mechanicalProperties, Geometry(0.0, rings[1].geometry.R1))
+    innerTube::InnerTubeSym = InnerTubeSym(
+        rings[1].mechanicalProperties, Geometry(0.0, rings[1].geometry.R1))
     stiffness::FilamentStiffnessSym = FilamentStiffnessSym(computeK(rings, innerTube))
     ρvol::Any
     m = ρvol * pi * R0^2 * L # This is applicable only for non-varying R0.

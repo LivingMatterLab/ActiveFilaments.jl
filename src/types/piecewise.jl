@@ -28,7 +28,6 @@ function Base.:+(x::PiecewiseStructure, y::PiecewiseStructure)
     PiecewiseStructure(expressions, x.piecewiseRanges)
 end
 
-
 """
     $(TYPEDSIGNATURES)
 
@@ -358,7 +357,7 @@ function eval_build_functions(x::PiecewiseStructure, arg; worldage = true)
         if worldage
             push!(
                 expressions,
-                eval(build_function(expression, arg, expression = Val{false})),
+                eval(build_function(expression, arg, expression = Val{false}))
             )
         else
             push!(expressions, eval(build_function(expression, arg)))

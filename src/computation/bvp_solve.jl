@@ -16,35 +16,35 @@ The gravitational acceleration stepping is necessary to ensure robust convergenc
 to a BVP solution. Typically, as little as 4 steps might be sufficient.
 """
 function selfWeightSolve(
-    filament::AFilament{T,M,A} where {T,M,A},
-    activation::Vector{ActivationPiecewiseGamma},
-    m0::Vector{Float64},
-    uInit::Vector{Float64},
-    g_range::StepRangeLen,
+        filament::AFilament{T, M, A} where {T, M, A},
+        activation::Vector{ActivationPiecewiseGamma},
+        m0::Vector{Float64},
+        uInit::Vector{Float64},
+        g_range::StepRangeLen
 )
-    activationFourier::Vector{ActivationFourier} =
-        [piecewiseGammaToFourier(activation_i) for activation_i in activation]
+    activationFourier::Vector{ActivationFourier} = [piecewiseGammaToFourier(activation_i)
+                                                    for activation_i in activation]
     selfWeightSolve(filament, activationFourier, m0, uInit, g_range)
 end
 
 function selfWeightSolve(
-    filament::AFilament{T,M,A} where {T,M,A},
-    activation::Vector{ActivationFourier},
-    m0::Vector{Float64},
-    uInit::Vector{Float64},
-    g_range::StepRangeLen,
+        filament::AFilament{T, M, A} where {T, M, A},
+        activation::Vector{ActivationFourier},
+        m0::Vector{Float64},
+        uInit::Vector{Float64},
+        g_range::StepRangeLen
 )
     prefactors = computePropertyPrefactors(filament)
     precomputedQuantities = convertUQuantToStatic(
         filament,
-        computeUQuantities(filament, activation, prefactors),
+        computeUQuantities(filament, activation, prefactors)
     )
 
     stiffness = filament.auxiliary.stiffness
     ρlin0Int = filament.auxiliary.ρlin0Int
 
     m10::Float64, m20::Float64, m30::Float64 = m0
-    bcs = SVector{12,Float64}(uInit[1:12])
+    bcs = SVector{12, Float64}(uInit[1:12])
     sol = 0
     Zspan = (0.0, filament.L::Float64)
     for gi in g_range
@@ -56,7 +56,7 @@ function selfWeightSolve(
             Shooting(AutoVern7(Rodas4())),
             dt = filament.L / 100.0,
             abstol = 1e-12,
-            reltol = 1e-12,
+            reltol = 1e-12
         )
         # sol = solve(bvp, MIRK4(), dt = filament.L / 100.0, abstol = 1e-12, reltol = 1e-12);
 
@@ -76,7 +76,7 @@ function selfWeightSolve(
             uInit[12],
             m10,
             m20,
-            m30,
+            m30
         ]
     end
 
@@ -100,18 +100,18 @@ The gravitational acceleration stepping is necessary to ensure robust convergenc
 to a BVP solution. Typically, as little as 4 steps might be sufficient.
 """
 function selfWeightSolveSym(
-    filament::AFilament{T,M,A} where {T,M,A},
-    activation::Vector{ActivationFourier{T}} where {T},
-    m0::Vector{Float64},
-    uInit::Vector{Float64},
-    g_range::StepRangeLen;
-    kwargs...,
+        filament::AFilament{T, M, A} where {T, M, A},
+        activation::Vector{ActivationFourier{T}} where {T},
+        m0::Vector{Float64},
+        uInit::Vector{Float64},
+        g_range::StepRangeLen;
+        kwargs...
 )
     prefactors = computePropertyPrefactorsSym(filament)
     precomputedQuantities = computeUQuantitiesSym(filament, activation, prefactors)
 
-    u_f::NTuple{4,Union{PiecewiseStructure,Function}} =
-        buildUFunctions(filament, precomputedQuantities; kwargs...)
+    u_f::NTuple{4, Union{PiecewiseStructure, Function}} = buildUFunctions(
+        filament, precomputedQuantities; kwargs...)
     m10::Float64, m20::Float64, m30::Float64 = m0
     sol = 0
     Zspan = (0.0, filament.L)
@@ -126,7 +126,7 @@ function selfWeightSolveSym(
             Shooting(AutoVern7(Rodas4())),
             dt = filament.L / 100.0,
             abstol = 1e-12,
-            reltol = 1e-12,
+            reltol = 1e-12
         ) #, abstol = 1e-12, reltol = 1e-12
 
         m10, m20, m30 = sol(0)[13:15]
@@ -137,16 +137,15 @@ function selfWeightSolveSym(
 end
 
 function selfWeightSolveSym(
-    filament::AFilament{T,M,A} where {T,M,A},
-    activationGamma::Vector{ActivationPiecewiseGamma},
-    m0::Vector{Float64},
-    uInit::Vector{Float64},
-    g_range::StepRangeLen;
-    kwargs...,
+        filament::AFilament{T, M, A} where {T, M, A},
+        activationGamma::Vector{ActivationPiecewiseGamma},
+        m0::Vector{Float64},
+        uInit::Vector{Float64},
+        g_range::StepRangeLen;
+        kwargs...
 )
-    activationFourier = Vector{ActivationFourier}([
-        piecewiseGammaToFourier(activation) for activation in activationGamma
-    ])
+    activationFourier = Vector{ActivationFourier}([piecewiseGammaToFourier(activation)
+                                                   for activation in activationGamma])
     selfWeightSolveSym(filament, activationFourier, m0, uInit, g_range; kwargs...)
 end
 #endregion ===========================

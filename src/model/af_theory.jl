@@ -72,22 +72,19 @@ function computeDeltas(ring::Ring)
         for (α2, range) in zip(α2_st.expressions, α2_st.piecewiseRanges)
             if (α2 !== 0 && α2 !== 0.0f0 && α2 !== 0.0) # Helical
                 ν = ring.mechanicalProperties.ν
-                δ0 =
-                    (ν + 1) * R2^2 * cot(α2)^2 *
-                    log(R2^2 * sec(α2)^2 / (R1^2 * tan(α2)^2 + R2^2)) + ν * (R1^2 - R2^2)
-                δ1 =
-                    (R1 - R2) *
-                    (ν * (R1^2 + R2 * R1 + R2^2) - 3 * (ν + 1) * R2^2 * cot(α2)^2) +
-                    3 * (ν + 1) * R2^3 * cot(α2)^3 * atan(R1 * tan(α2) / R2) -
-                    3 * α2 * (ν + 1) * R2^3 * cot(α2)^3
+                δ0 = (ν + 1) * R2^2 * cot(α2)^2 *
+                     log(R2^2 * sec(α2)^2 / (R1^2 * tan(α2)^2 + R2^2)) + ν * (R1^2 - R2^2)
+                δ1 = (R1 - R2) *
+                     (ν * (R1^2 + R2 * R1 + R2^2) - 3 * (ν + 1) * R2^2 * cot(α2)^2) +
+                     3 * (ν + 1) * R2^3 * cot(α2)^3 * atan(R1 * tan(α2) / R2) -
+                     3 * α2 * (ν + 1) * R2^3 * cot(α2)^3
                 δ2 = δ1
-                δ3 =
-                    -(1 + ν) * R2 * cot(α2) *
-                    (
-                        R1^2 - R2^2 +
-                        R2^2 * cot(α2)^2 *
-                        log(2 * R2^2 / ((R2^2 - R1^2) * cos(2 * α2) + R1^2 + R2^2))
-                    )
+                δ3 = -(1 + ν) * R2 * cot(α2) *
+                     (
+                         R1^2 - R2^2 +
+                         R2^2 * cot(α2)^2 *
+                         log(2 * R2^2 / ((R2^2 - R1^2) * cos(2 * α2) + R1^2 + R2^2))
+                     )
                 push!(expressionsδ0, δ0)
                 push!(expressionsδ1, δ1)
                 push!(expressionsδ2, δ2)
@@ -110,25 +107,22 @@ function computeDeltas(ring::Ring)
     else # Helical angle constant in Z
         if ring.geometry.phi2 == 0 # Non-tapered
             α2 = α2_st
-            if (α2 !== 0 && α2 !== 0.0f0 && α2 !== 0.0 && α2 !== -0.0) # Helical; Revise this logic to be clearer (unsure if !== are still needed in the context of the rest of the code)
+            if (α2 !== 0 && α2 !== 0.0f0 && α2 !== 0.0 && α2 !== -0.0) # Helical case
                 ν = ring.mechanicalProperties.ν
-                δ0 =
-                    (ν + 1) * R2^2 * cot(α2)^2 *
-                    log(R2^2 * sec(α2)^2 / (R1^2 * tan(α2)^2 + R2^2)) + ν * (R1^2 - R2^2)
-                δ1 =
-                    (R1 - R2) *
-                    (ν * (R1^2 + R2 * R1 + R2^2) - 3 * (ν + 1) * R2^2 * cot(α2)^2) +
-                    3 * (ν + 1) * R2^3 * cot(α2)^3 * atan(R1 * tan(α2) / R2) -
-                    3 * α2 * (ν + 1) * R2^3 * cot(α2)^3
+                δ0 = (ν + 1) * R2^2 * cot(α2)^2 *
+                     log(R2^2 * sec(α2)^2 / (R1^2 * tan(α2)^2 + R2^2)) + ν * (R1^2 - R2^2)
+                δ1 = (R1 - R2) *
+                     (ν * (R1^2 + R2 * R1 + R2^2) - 3 * (ν + 1) * R2^2 * cot(α2)^2) +
+                     3 * (ν + 1) * R2^3 * cot(α2)^3 * atan(R1 * tan(α2) / R2) -
+                     3 * α2 * (ν + 1) * R2^3 * cot(α2)^3
                 δ2 = δ1
-                δ3 =
-                    -(1 + ν) * R2 * cot(α2) *
-                    (
-                        R1^2 - R2^2 +
-                        R2^2 * cot(α2)^2 *
-                        log(2 * R2^2 / ((R2^2 - R1^2) * cos(2 * α2) + R1^2 + R2^2))
-                    )
-            else # Longitudinal
+                δ3 = -(1 + ν) * R2 * cot(α2) *
+                     (
+                         R1^2 - R2^2 +
+                         R2^2 * cot(α2)^2 *
+                         log(2 * R2^2 / ((R2^2 - R1^2) * cos(2 * α2) + R1^2 + R2^2))
+                     )
+            else # Longitudinal case
                 δ0 = R2^2 - R1^2
                 δ1 = R2^3 - R1^3
                 δ2 = δ1
@@ -162,48 +156,46 @@ function computeDeltas(ring::Ring)
                 R1cph2 = R1 .* cph2
                 R2cph2 = R2 .* cph2
 
-                δ0 =
-                    2 * (R12 - R22) * ν -
-                    (2 * (1 + ν) * log.((tph1 .* ta2) ./ (tph2 .* ta1))) ./ (cpha2)
+                δ0 = 2 * (R12 - R22) * ν -
+                     (2 * (1 + ν) * log.((tph1 .* ta2) ./ (tph2 .* ta1))) ./ (cpha2)
 
                 δ1 = (
                     2 ./ (cph .* ca .* (cpha2))
                     .*
                     (
-                        3 * (1 + ν) * (atan.(R1cph) - atan.(R2cph)) .* ca
-                        + (R13 - R23) * ν .* (cph2 .* cph) .* ca
-                        +
-                        cph .* (
-                            -3 * (1 + ν) * (atan.(R1ca) - atan.(R2ca)) +
-                            (R23 - R13) * ν .* (ca2 .* ca)
-                        )
+                    3 * (1 + ν) * (atan.(R1cph) - atan.(R2cph)) .* ca
+                    + (R13 - R23) * ν .* (cph2 .* cph) .* ca
+                    +
+                    cph .* (
+                        -3 * (1 + ν) * (atan.(R1ca) - atan.(R2ca)) +
+                        (R23 - R13) * ν .* (ca2 .* ca)
                     )
+                )
                 )
                 δ2 = δ1
                 δ3 = (
                     1 ./ (cph2 .* ca2 .* sqrt.(Complex.(cpha2)))
                     .*
                     (
-                        3 * cph2 .* (
-                            atan.((im * R1cph2 + ca) ./ sq1)
-                            -
-                            atan.((im * R2cph2 + ca) ./ sq2)
-                            -
-                            im * atanh.((R1cph2 + im * ca) ./ sq1)
-                            +
-                            im * atanh.((R2cph2 + im * ca) ./ sq2)
-                        )
-                        +
-                        6 * ca .* (sq2 - sq1)
-                    )
+                    3 * cph2 .* (
+                    atan.((im * R1cph2 + ca) ./ sq1)
+                    -
+                    atan.((im * R2cph2 + ca) ./ sq2)
+                    -
+                    im * atanh.((R1cph2 + im * ca) ./ sq1)
+                    +
+                    im * atanh.((R2cph2 + im * ca) ./ sq2)
+                )
+                    +
+                    6 * ca .* (sq2 - sq1)
+                )
                 )
                 return SVector{4}(real(δ0), real(δ1), real(δ2), real(δ3))
             else # Longitudinal
                 δ0 = 2 * (R12 - R22) * ν - (2 * (1 + ν) * log.(tph1 ./ tph2)) ./ cph2
-                δ1 =
-                    2 * (R13 - R23) * ν +
-                    (6 * (1 + ν) * (atan.(R1cph) - atan.(R2cph) + (R2 - R1) .* cph)) ./
-                    (cph2 .* cph)
+                δ1 = 2 * (R13 - R23) * ν +
+                     (6 * (1 + ν) * (atan.(R1cph) - atan.(R2cph) + (R2 - R1) .* cph)) ./
+                     (cph2 .* cph)
                 δ2 = δ1
                 δ3 = 0
             end
@@ -269,8 +261,8 @@ function computePropertyPrefactors(filament::AFilament)
                 simplify(pre_H[1] ./ K0),
                 simplify(pre_H[2] ./ K1),
                 simplify(pre_H[3] ./ K2),
-                simplify(pre_H[4] ./ K3),
-            ),
+                simplify(pre_H[4] ./ K3)
+            )
         )
     end
 
@@ -299,8 +291,8 @@ function computePropertyPrefactorsSym(filament::AFilament)
                 simplify(pre_H[1] / K0),
                 simplify(pre_H[2] / K1),
                 simplify(pre_H[3] / K2),
-                simplify(pre_H[4] / K3),
-            ),
+                simplify(pre_H[4] / K3)
+            )
         )
     end
 
@@ -322,9 +314,9 @@ function piecewiseGammaToFourier(activationGamma::ActivationPiecewiseGamma)
     a0 = σ / pi * sum(γ)
     a1 = 0.0
     b1 = 0.0
-    for i = 0:N-1
-        a1 += γ[i+1] * cos(θ0 + 2 * pi * i / N)
-        b1 += γ[i+1] * sin(θ0 + 2 * pi * i / N)
+    for i in 0:(N - 1)
+        a1 += γ[i + 1] * cos(θ0 + 2 * pi * i / N)
+        b1 += γ[i + 1] * sin(θ0 + 2 * pi * i / N)
     end
     a1 *= 2 * sin(σ / 2) / pi
     b1 *= 2 * sin(σ / 2) / pi
@@ -341,10 +333,10 @@ activations in the `filament`.
 The resulting `PrecomputedQuantities` are used to speed up computation.
 """
 function computeUQuantities(
-    filament::AFilament{1,M} where {M},
-    activationsFourier::Vector{ActivationFourier},
-    prefactors::Vector{Prefactors};
-    interp = cubic_spline_interpolation,
+        filament::AFilament{1, M} where {M},
+        activationsFourier::Vector{ActivationFourier},
+        prefactors::Vector{Prefactors};
+        interp = cubic_spline_interpolation
 )
     Z = filament.Z
     M = typeof(filament).parameters[2]
@@ -353,8 +345,8 @@ function computeUQuantities(
     ϕ = Vector{Float64}()
     argTerms = Vector{Interpolations.Extrapolation}()
 
-    for (activationFourier, propertyPrefactors, ring) in
-        zip(activationsFourier, prefactors, filament.rings)
+    for (activationFourier, propertyPrefactors, ring) in zip(
+        activationsFourier, prefactors, filament.rings)
         a0 = activationFourier.a0
         a1 = activationFourier.a1
         b1 = activationFourier.b1
@@ -374,27 +366,27 @@ function computeUQuantities(
                 interp(Z, propertyPrefactors.pre_ζ * a0),
                 interp(Z, propertyPrefactors.pre_u1 * A),
                 interp(Z, -propertyPrefactors.pre_u2 * A),
-                interp(Z, propertyPrefactors.pre_u3 * a0),
-            ),
+                interp(Z, propertyPrefactors.pre_u3 * a0)
+            )
         )
     end
 
-    PrecomputedQuantities{Float64,Interpolations.Extrapolation}(uPrefactors, ϕ, argTerms)
+    PrecomputedQuantities{Float64, Interpolations.Extrapolation}(uPrefactors, ϕ, argTerms)
 end
 
 ### The functions computeUQuantities and computeUQuantitiesSym can be combined 
 ### into one with other necessary changes, because they are the same apart from 
 ### the ActivationFourier type in the collection
 function computeUQuantities(
-    filament::AFilament{0,M} where {M},
-    activationsFourier::Vector{ActivationFourier},
-    prefactors::Vector{Prefactors},
+        filament::AFilament{0, M} where {M},
+        activationsFourier::Vector{ActivationFourier},
+        prefactors::Vector{Prefactors}
 )
     uPrefactors = Vector{Prefactors{Float64}}()
     ϕ = Vector{Float64}()
     argTerms = Vector{Float64}()
-    for (activationFourier, propertyPrefactors, ring) in
-        zip(activationsFourier, prefactors, filament.rings)
+    for (activationFourier, propertyPrefactors, ring) in zip(
+        activationsFourier, prefactors, filament.rings)
         a0 = activationFourier.a0
         a1 = activationFourier.a1
         b1 = activationFourier.b1
@@ -410,25 +402,25 @@ function computeUQuantities(
                 simplify(propertyPrefactors.pre_ζ * a0),
                 simplify(propertyPrefactors.pre_u1 * A),
                 simplify(-propertyPrefactors.pre_u2 * A),
-                simplify(propertyPrefactors.pre_u3 * a0),
-            ),
+                simplify(propertyPrefactors.pre_u3 * a0)
+            )
         )
     end
 
-    PrecomputedQuantities{Float64,Float64}(uPrefactors, ϕ, argTerms)
+    PrecomputedQuantities{Float64, Float64}(uPrefactors, ϕ, argTerms)
 end
 
 function computeUQuantitiesSym(
-    filament::AFilament{0,M} where {M},
-    activationsFourier::Vector{ActivationFourier{T}} where {T},
-    prefactors::Vector{Prefactors},
+        filament::AFilament{0, M} where {M},
+        activationsFourier::Vector{ActivationFourier{T}} where {T},
+        prefactors::Vector{Prefactors}
 )
     uPrefactors = Vector{Prefactors}()
     type = typeof(activationsFourier[1]).parameters[1]
     ϕ = Vector{type}()
     argTerms = Vector{type}()
-    for (activationFourier, propertyPrefactors, ring) in
-        zip(activationsFourier, prefactors, filament.rings)
+    for (activationFourier, propertyPrefactors, ring) in zip(
+        activationsFourier, prefactors, filament.rings)
         a0 = activationFourier.a0
         a1 = activationFourier.a1
         b1 = activationFourier.b1
@@ -444,8 +436,8 @@ function computeUQuantitiesSym(
                 simplify(propertyPrefactors.pre_ζ * a0),
                 simplify(propertyPrefactors.pre_u1 * A),
                 simplify(-propertyPrefactors.pre_u2 * A),
-                simplify(propertyPrefactors.pre_u3 * a0),
-            ),
+                simplify(propertyPrefactors.pre_u3 * a0)
+            )
         )
     end
 
@@ -511,14 +503,14 @@ Outputs a 4-element static `SVector` of numerical
 
 Used for non-symbolic computation only.
 """
-function computeUHat(Z::AbstractFloat, precomp::SMatrix{T,6,Float64} where {T})
+function computeUHat(Z::AbstractFloat, precomp::SMatrix{T, 6, Float64} where {T})
     ζ_hat = 1.0
     u1_hat = 0.0
     u2_hat = 0.0
     u3_hat = 0.0
     M, _ = size(precomp)
 
-    for i = 1:M
+    for i in 1:M
         ζ_hat += precomp[i, 1]
         u1_hat += precomp[i, 2] * sin(precomp[i, 5] - Z * precomp[i, 6])
         u2_hat += precomp[i, 3] * cos(precomp[i, 5] - Z * precomp[i, 6])
@@ -527,14 +519,14 @@ function computeUHat(Z::AbstractFloat, precomp::SMatrix{T,6,Float64} where {T})
     SVector{4}(ζ_hat, u1_hat, u2_hat, u3_hat)
 end
 
-function computeUHat(Z::AbstractFloat, precomp::SVector{M,Tuple} where {M})
+function computeUHat(Z::AbstractFloat, precomp::SVector{M, Tuple} where {M})
     ζ_hat = 1.0
     u1_hat = 0.0
     u2_hat = 0.0
     u3_hat = 0.0
     M = length(precomp)
 
-    for i = 1:M
+    for i in 1:M
         ζ_hat = ζ_hat + precomp[i][1](Z)
         u1_hat += precomp[i][2](Z) * sin(precomp[i][5] - precomp[i][6](Z))
         u2_hat += precomp[i][3](Z) * cos(precomp[i][5] - precomp[i][6](Z))
@@ -550,7 +542,7 @@ function computeUHat(Z::AbstractFloat, precomp::Tuple)
     u3_hat = 0.0
     M = length(precomp)
 
-    for i = 1:M
+    for i in 1:M
         ζ_hat = ζ_hat + precomp[i][1](Z)
         u1_hat += precomp[i][2](Z) * sin(precomp[i][5] - precomp[i][6](Z))
         u2_hat += precomp[i][3](Z) * cos(precomp[i][5] - precomp[i][6](Z))
@@ -578,7 +570,7 @@ function computeUHatGPU(Z::Float32, precomp::SMatrix)
     u3_hat = 0.0f0
     M, _ = size(precomp)
 
-    for i = 1:M
+    for i in 1:M
         ζ_hat += precomp[i, 1]
         u1_hat += precomp[i, 2] * sin(precomp[i, 5] - Z * precomp[i, 6])
         u2_hat += precomp[i, 3] * cos(precomp[i, 5] - Z * precomp[i, 6])

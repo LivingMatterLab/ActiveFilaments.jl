@@ -1,10 +1,10 @@
-# This is an estimate. This becomes exact with n -> Infinity
+# This is an estimate. It becomes exact with n -> Infinity
 function estimateTotalBending(
-    sol::ODESolution,
-    filament,
-    refVector;
-    n = 20,
-    normal = [1.0, 0.0, 0.0],
+        sol::ODESolution,
+        filament,
+        refVector;
+        n = 20,
+        normal = [1.0, 0.0, 0.0]
 )
     Z = LinRange(0.0, filament.L, n)
     points = sol.(Z)
@@ -20,16 +20,16 @@ function estimateTotalBending(
 end
 
 function bendingAngle(
-    sol::ODESolution,
-    filament,
-    refVector;
-    largeAngle = false,
-    fullRev = false,
-    n_bending = 20,
-    normal = [1.0, 0.0, 0.0],
+        sol::ODESolution,
+        filament,
+        refVector;
+        largeAngle = false,
+        fullRev = false,
+        n_bending = 20,
+        normal = [1.0, 0.0, 0.0]
 )
-    totalBending =
-        estimateTotalBending(sol, filament, refVector, n = n_bending, normal = normal)
+    totalBending = estimateTotalBending(
+        sol, filament, refVector, n = n_bending, normal = normal)
     tangent_end = sol[end][10:12]
 
     angle_end = signedAngle(refVector, tangent_end, normal)
@@ -53,7 +53,8 @@ function bendingAngle(
 end
 
 function bendingAngle(r::Vector, refVector)
-    end_vector = [r[1][end] - r[1][end-1], r[2][end] - r[2][end-1], r[3][end] - r[3][end-1]]
+    end_vector = [
+        r[1][end] - r[1][end - 1], r[2][end] - r[2][end - 1], r[3][end] - r[3][end - 1]]
     end_vector = end_vector / norm(end_vector)
     return end_vector[2] <= 0.0 ?
            atan(norm(cross(end_vector, refVector)), dot(end_vector, refVector)) :
@@ -99,12 +100,12 @@ function wrappingAngle(sol::ODESolution, refVector)
 end
 
 function tiltAngle(
-    sol::ODESolution,
-    filament,
-    planeNormal;
-    f1 = 1.0 / 5.0,
-    f2 = 2.0 / 5.0,
-    projectionPlaneNormal = [],
+        sol::ODESolution,
+        filament,
+        planeNormal;
+        f1 = 1.0 / 5.0,
+        f2 = 2.0 / 5.0,
+        projectionPlaneNormal = []
 )
     point_end1 = sol(filament.L)[1:3]
     point_end2 = sol(filament.L - filament.L * f1)[1:3]
@@ -119,12 +120,12 @@ function tiltAngle(
 end
 
 function tiltAngleCapped(
-    sol::ODESolution,
-    filament,
-    planeNormal;
-    f1 = 1.0 / 5.0,
-    f2 = 2.0 / 5.0,
-    kwargs...,
+        sol::ODESolution,
+        filament,
+        planeNormal;
+        f1 = 1.0 / 5.0,
+        f2 = 2.0 / 5.0,
+        kwargs...
 )
     angle = tiltAngle(sol, filament, planeNormal; f1 = f1, f2 = f2, kwargs...)
     if angle > pi / 2
@@ -134,12 +135,12 @@ function tiltAngleCapped(
 end
 
 function tiltAngle(
-    r::Vector,
-    L,
-    planeNormal;
-    f1 = 1.0 / 5.0,
-    f2 = 2.0 / 5.0,
-    projectionPlaneNormal = [],
+        r::Vector,
+        L,
+        planeNormal;
+        f1 = 1.0 / 5.0,
+        f2 = 2.0 / 5.0,
+        projectionPlaneNormal = []
 )
     n = size(r[1])[1]
     Z_range = LinRange(0.0, L, n)

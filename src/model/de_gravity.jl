@@ -25,10 +25,11 @@ The unknown function u has the following structure:
 `(u[13], u[14], u[15])` = moments along `Z`
 """
 function selfWeightDE!(
-    du,
-    u,
-    p::Tuple{Float64,Function,SVector{4,Float64},<:AbstractMatrix,SVector{12,Float64}},
-    Z,
+        du,
+        u,
+        p::Tuple{
+            Float64, Function, SVector{4, Float64}, <:AbstractMatrix, SVector{12, Float64}},
+        Z
 )
     ζ_hat, u1_hat, u2_hat, u3_hat = computeUHat(Z, p[4])
 
@@ -63,10 +64,10 @@ end
 
 # Tapered
 function selfWeightDE!(
-    du,
-    u,
-    p::Tuple{Float64,Function,SVector{4,<:AbstractInterpolation},Tuple},
-    Z,
+        du,
+        u,
+        p::Tuple{Float64, Function, SVector{4, <:AbstractInterpolation}, Tuple},
+        Z
 )
     ζ_hat, u1_hat, u2_hat, u3_hat = computeUHat(Z, p[4])
     ρlinInt = p[2](Z)
