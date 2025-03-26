@@ -1399,7 +1399,7 @@ function ActiveFilaments.plot_trunk!(
     R1 = trunk_sim.interpolations.R1
     R2 = trunk_sim.interpolations.R2
 
-    @time R_factor = compute_R_factor_current(trunk_sim.trunk, sol)
+    R_factor = compute_R_factor_current(trunk_sim.trunk, sol)
     
     plot_outer_trunk!(
         trunk,
