@@ -511,74 +511,6 @@ function self_weight_wrap_offset_nbodyc_trunk_de!(du, u,
     du[15] = ζ_hat * (u2 * u[13] - u1 * u[14]) - l3
 end
 
-# DE system for the BVP with:
-# - the self weight,
-# - a distributed load,
-# - a couple due to offset loading.
-function self_weight_wrap_trunk_de!(du, u,
-        p::Tuple{
-            Float64,
-            Function,
-            SVector{4, PiecewiseFunction{T, Interpolations.Extrapolation}},
-            SVector{4, PiecewiseFunction{T, Interpolations.Extrapolation}},
-            Tuple{Float64, Float64, Float64, SVector{3, Float64}, Function},
-            SVector{12, Float64}
-        }, Z) where {T}
-    u1_hat = p[4][1](Z)
-    u2_hat = p[4][2](Z)
-    u3_hat = p[4][3](Z)
-    ζ_hat = p[4][4](Z)
-
-    w = p[5][1]
-    L = p[5][2]
-    Z_0 = p[5][3]
-    r_C = p[5][4]
-    R0_act = p[5][5](Z)
-
-    w_n = w * (L - max(Z, Z_0))
-
-    moment_r = r_C - u[1:3]
-    moment_r = moment_r / norm(moment_r) * R0_act
-    l1 = w * (u[4] * moment_r[2] - u[5] * moment_r[1])
-    l2 = w * (u[7] * moment_r[2] - u[8] * moment_r[1])
-    l3 = w * (u[10] * moment_r[2] - u[11] * moment_r[1])
-
-    ρlinInt = p[2](Z)
-    n_factor = -p[1] * ρlinInt + w_n
-
-    n1 = n_factor * u[6]
-    n2 = n_factor * u[9]
-    n3 = n_factor * u[12]
-
-    ζF = n3 / p[3][4](Z) + 1.0
-    ζ = ζ_hat * ζF
-    u1 = u1_hat + u[13] / p[3][1](Z)
-    u2 = u2_hat + u[14] / p[3][2](Z)
-    u3 = u3_hat + u[15] / p[3][3](Z)
-
-    du[1] = ζ * u[10]
-    du[2] = ζ * u[11]
-    du[3] = ζ * u[12]
-    du[4] = ζ_hat * (u3 * u[7] - u2 * u[10])
-    du[5] = ζ_hat * (u3 * u[8] - u2 * u[11])
-    du[6] = ζ_hat * (u3 * u[9] - u2 * u[12])
-    du[7] = ζ_hat * (u1 * u[10] - u3 * u[4])
-    du[8] = ζ_hat * (u1 * u[11] - u3 * u[5])
-    du[9] = ζ_hat * (u1 * u[12] - u3 * u[6])
-    du[10] = ζ_hat * (u2 * u[4] - u1 * u[7])
-    du[11] = ζ_hat * (u2 * u[5] - u1 * u[8])
-    du[12] = ζ_hat * (u2 * u[6] - u1 * u[9])
-
-    # The l1, l2, and l3 do not have a ζ_hat factor because
-    # they are already couples per unit initial length;
-    # this is also the case for a distributed body couple 
-    # due to off-center loading (not considered in this function)
-    # [see Moulton et al. Morphoelastic Rods: Part 1]
-    du[13] = ζ_hat * (u3 * u[14] - u2 * u[15]) + ζ * n2 - l1
-    du[14] = ζ_hat * (u1 * u[15] - u3 * u[13]) - ζ * n1 - l2
-    du[15] = ζ_hat * (u2 * u[13] - u1 * u[14]) - l3
-end
-
 """
     $(TYPEDSIGNATURES)
 
@@ -839,51 +771,6 @@ function build_trunk_wrap_offset_nbodyc_bvp(trunk::TrunkFast{T, N},
         bcs
     )
     bvp = TwoPointBVProblem(self_weight_wrap_offset_nbodyc_trunk_de!,
-        (self_weight_bc_start!, self_weight_bc_end!), uInit, Zspan, p;
-        bcresid_prototype = (zeros(12), zeros(3)))
-
-    bvp, activation
-end
-
-"""
-    $(TYPEDSIGNATURES)
-
-Constructs the `TwoPointBVProblem` for a given `trunk`, 
-activation `γ`, boundary conditions `bcs`, initial moment `m0`,
-initial guess `uInit`, gravitational acceleration `g`, 
-weight of the log `W_C`, starting coordinate `Z_0` of the
-distributed load, and the contact `r_C`.
-
-Returns the `TwoPointBVProblem` and the `ActivatedTrunkQuantities`
-for the provided `trunk`.
-    
-"""
-function build_trunk_wrap_bvp(trunk::TrunkFast{T, N},
-        γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}} = (
-            (@SMatrix zeros(3, 5)),
-            (@SMatrix zeros(3, 5))
-        );
-        bcs = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
-        m0::Vector{Float64} = [0.0, 0.0, 0.0],
-        uInit::Vector{Float64} = [bcs..., m0[1], m0[2], m0[3]],
-        g::Float64 = -9.8,
-        W_C::Float64 = 0.0,
-        Z_0::Float64 = trunk.trunk.L,
-        r_C::SVector{3, Float64} = SVector{3, Float64}([0.0, 0.0, 0.0])) where {T, N}
-    activation = ActivatedTrunkQuantities{T, N}(trunkFast = trunk, γ = γ)
-    L = trunk.trunk.L
-    w = W_C / (L - Z_0)
-    R0_act = Z -> (activation.R_factor * trunk.R00 - Z * tan(trunk.trunk.φ0))
-
-    stiffness = activation.new_K
-    ρlin0Int = trunk.ρlin0Int
-    u_hat = activation.u_hat
-
-    bcs = SVector{12, Float64}(bcs)
-    Zspan = (0.0, L::Float64)
-
-    p = (g, ρlin0Int, stiffness, u_hat, (w, L, Z_0, r_C, R0_act), bcs)
-    bvp = TwoPointBVProblem(self_weight_wrap_trunk_de!,
         (self_weight_bc_start!, self_weight_bc_end!), uInit, Zspan, p;
         bcresid_prototype = (zeros(12), zeros(3)))
 
