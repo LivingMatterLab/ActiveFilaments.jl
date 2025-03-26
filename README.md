@@ -3,14 +3,14 @@ ActiveFilaments.jl is a computationally efficient Julia implementation of the me
 
 [Kaczmarski, B., Moulton, D. E., Kuhl, E. & Goriely, A. Active filaments I: Curvature and torsion generation. _Journal of the Mechanics and Physics of Solids_ **164**, 104918 (2022).](https://doi.org/10.1016/j.jmps.2022.104918)
 
-Using this package, you can design the geometry and fiber architecture in a slender structure and simulate its deformation due to fibrillar activation. The package provides a library of analysis tools for exploratory biomechanics and soft-robotics research including fast workspace computation for active soft slender structures.
+By using this package, you can design the geometry and fiber architecture in a slender structure and simulate its deformation due to fibrillar activation. The package provides a library of analysis tools for exploratory biomechanics and soft-robotics research including fast workspace computation for active soft slender structures.
 
 # Installation
 Run the following command in Julia 1.10.0+:
 ```
 ] add https://github.com/LivingMatterLab/ActiveFilaments.git
 ```
-Wait for all dependencies to precompile. Slowdowns are possible during precompilation in parallelized BVP solutions if Julia version 1.9.0 or older is used.
+Wait for all dependencies to precompile. Slowdowns are possible during precompilation in parallelized BVP solutions if Julia v1.9.0 or older is used.
 
 # Example usage
 ## Computing an activated configuration
