@@ -324,6 +324,7 @@ function compute_R_factor_current(trunk::Trunk{T, N}, sol; n = 200) where {T, N}
     return R_factor
 end
 
+# Intrinsic (no external loading) IVP definition
 function intrinsic_trunk_de_SA(u, p, Z)
     u1_hat = p[1](Z)
     u2_hat = p[2](Z)
@@ -345,29 +346,7 @@ function intrinsic_trunk_de_SA(u, p, Z)
     SVector{12}(du1, du2, du3, du4, du5, du6, du7, du8, du9, du10, du11, du12)
 end
 
-function solveIntrinsic(trunk::TrunkFast{T, N},
-        γ::Tuple{SMatrix{T, 5, Float64}, SMatrix{T, 5, Float64}},
-        u0 = SVector{12, Float64}([
-            0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]),
-        Zspan = (0.0, trunk.trunk.L);
-        kwargs...) where {T, N}
-    activation = ActivatedTrunkQuantities{T, N}(trunkFast = trunk, γ = γ)
-    p = activation.u_hat
-    println(typeof(p))
-
-    prob = ODEProblem(intrinsic_trunk_de_SA, u0, Zspan, p)
-
-    sol = solve(
-        prob,
-        AutoVern7(Rodas4()),
-        dt = trunk.trunk.L / 100.0,
-        abstol = 1e-12,
-        reltol = 1e-12
-    )
-
-    sol, activation
-end
-
+# DE system for the self weight BVP
 function self_weight_trunk_de!(du, u,
         p::Tuple{
             Float64,
@@ -414,6 +393,10 @@ function self_weight_trunk_de!(du, u,
     du[15] = ζ_hat * (u2 * u[13] - u1 * u[14])
 end
 
+# DE system for the BVP with:
+# - the self weight,
+# - a distributed load.
+# Neglects the body couples due to the distributed load.
 function self_weight_wrap_nbodyc_trunk_de!(du, u,
         p::Tuple{
             Float64,
@@ -463,6 +446,11 @@ function self_weight_wrap_nbodyc_trunk_de!(du, u,
     du[15] = ζ_hat * (u2 * u[13] - u1 * u[14])
 end
 
+# DE system for the BVP with:
+# - the self weight,
+# - a distributed load,
+# - a couple due to offset loading.
+# Neglects the body couples due to the distributed load.
 function self_weight_wrap_offset_nbodyc_trunk_de!(du, u,
         p::Tuple{
             Float64,
@@ -523,6 +511,10 @@ function self_weight_wrap_offset_nbodyc_trunk_de!(du, u,
     du[15] = ζ_hat * (u2 * u[13] - u1 * u[14]) - l3
 end
 
+# DE system for the BVP with:
+# - the self weight,
+# - a distributed load,
+# - a couple due to offset loading.
 function self_weight_wrap_trunk_de!(du, u,
         p::Tuple{
             Float64,
@@ -860,7 +852,7 @@ Constructs the `TwoPointBVProblem` for a given `trunk`,
 activation `γ`, boundary conditions `bcs`, initial moment `m0`,
 initial guess `uInit`, gravitational acceleration `g`, 
 weight of the log `W_C`, starting coordinate `Z_0` of the
-distributed load, and the moment arm `r_C`.
+distributed load, and the contact `r_C`.
 
 Returns the `TwoPointBVProblem` and the `ActivatedTrunkQuantities`
 for the provided `trunk`.
