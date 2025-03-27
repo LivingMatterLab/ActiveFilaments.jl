@@ -61,7 +61,6 @@ function selfWeightSolve(
             abstol = 1e-12,
             reltol = 1e-12
         )
-        # sol = solve(bvp, MIRK4(), dt = filament.L / 100.0, abstol = 1e-12, reltol = 1e-12);
 
         m10, m20, m30 = sol(0)[13:15]
         uInit = [
@@ -120,18 +119,16 @@ function selfWeightSolveSym(
     sol = 0
     Zspan = (0.0, filament.L)
     for gi in g_range
-        # p = (gi, filament, u_f, arcLength)
         p = (gi, filament, u_f)
         bvp = BVProblem(selfWeightDESym!, selfWeightBC!, uInit, Zspan, p)
 
-        # Shooting(Tsit5()) is the default, but Vern7() has higher accuracy? Vern is definitely slightly slower though
         sol = solve(
             bvp,
             Shooting(AutoVern7(Rodas4())),
             dt = filament.L / 100.0,
             abstol = 1e-12,
             reltol = 1e-12
-        ) #, abstol = 1e-12, reltol = 1e-12
+        )
 
         m10, m20, m30 = sol(0)[13:15]
         uInit = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, m10, m20, m30]
