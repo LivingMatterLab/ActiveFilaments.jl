@@ -1,8 +1,7 @@
 #########################################################################
 ### Functions used for control calculations (inverse problem solving) ###
 #########################################################################
-
-function flattenActivation(activations::AbstractArray{<:AbstractActivation}; static = false)
+function flattenActivation(activations::AbstractArray{<:AbstractActivation}; return_variant = MVector)
     n_act = [activation.N for activation in activations]
     n_act_total = sum(n_act)
     running_totals = cumsum(n_act)
@@ -10,20 +9,24 @@ function flattenActivation(activations::AbstractArray{<:AbstractActivation}; sta
             ((running_totals[i - 1] + 1):running_totals[i])
             for
             i in eachindex(running_totals)]
-    if static
+
+
+    if return_variant == SVector
         return activations_flattened = SVector{n_act_total, Float64}([activations[i].γ[j]
                                                                       for i in eachindex(activations)
                                                                       for
                                                                       j in eachindex(activations[i].γ)])
-    else
+    elseif return_variant == MVector
         return activations_flattened = MVector{n_act_total, Float64}([activations[i].γ[j]
                                                                       for i in eachindex(activations)
                                                                       for
                                                                       j in eachindex(activations[i].γ)])
+    elseif return_variant == Vector
+        return [activations[i].γ[j] for i in eachindex(activations) for j in eachindex(activations[i].γ)]
     end
 end
 
-# The unflattening process is incompatible with many auto-diff methods apart from FiniteDiff
+# The unflattening process is incompatible with most auto-diff methods apart from FiniteDiff
 function unflattenActivation!(
         activation::AbstractArray{<:AbstractActivation},
         activations_flattened::AbstractArray
@@ -37,42 +40,73 @@ function unflattenActivation!(
     end
 end
 
+
 function buildDistanceFunction(
         controlObjective::ConfigurationControlObjective,
         filament::AFilament,
         activation::AbstractArray{<:AbstractActivation},
         configurationSolver::Function,
-        u0 = SVector{12, Float64}([
-            0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]),
-        Zspan = (0.0, filament.L), args...;
+        args...;
+        solver = nothing,
+        verbose = true,
         kwargs...)
-    if (controlObjective.propertyType === r)
-        return (function f(x, p)
+    arg = controlObjective.args
+    prop = controlObjective.properties
+    types = controlObjective.propertyTypes
+    weights = controlObjective.weights
+    return (function f(x, p)
             unflattenActivation!(activation, x)
-            sol = configurationSolver(filament, activation, u0, Zspan, args...)
+            if (!isnothing(solver) && configurationSolver != solveIntrinsic)
+                sol = configurationSolver(filament, activation, args...; solver = solver, kwargs...)
+            else
+                sol = configurationSolver(filament, activation, args...; kwargs...)
+            end
 
-            # Adapt for vectors
-            sol_r = sol(controlObjective.args[1])[1:3]
-            return sqeuclidean(sol_r, controlObjective.properties[1, :])
+            out = 0.0
+            for i in eachindex(prop)
+                prop_i = prop[i]
+                arg_i = arg[i]
+                t = types[i]
+                weights_i = weights[i]
+                for j in eachindex(arg_i)
+                    sol_arg = sol(arg_i[j])
+                    if t === r
+                        sol_prop = sol_arg[1:3]
+                        dist_r = euclidean(sol_prop, prop_i[j, :])
+                        out = out + weights_i[j] * dist_r
+                    elseif t === d3
+                        sol_prop = sol_arg[10:12]
+                        dist_d3 = euclidean(sol_prop, prop_i[j, :])
+                        out = out + weights_i[j] * dist_d3
+                    end
+                    # Other properties not used in the current code. Implement as needed
+                end
+            end
+            if verbose
+                @info "Current objective: $out"
+            end
+            return out
         end)
-    else
-        # Other property types are not used in current code. Implement as needed. 
-    end
 end
 
 """
     $(TYPEDSIGNATURES)
 
-Optimizes the fibrillar activation in a `filament` given a `controlObjective`
-and an `activation_structure`. The initial guess for the optimization is
-passed as input in `activation0`.
+Optimizes the fibrillar activation in a `filament` given a `controlObjective`, 
+an `activation_structure`, and a `configurationSolver` of choice. 
+The initial guess for the optimization is passed as input in `activation0`.
 """
 function optimizeActivation(
         controlObjective::ConfigurationControlObjective,
         filament::AFilament{V, M, A} where {V, M, A},
         activation_structure::AbstractArray{<:AbstractActivation},
         activation0::AbstractArray{<:AbstractActivation},
+        configurationSolver::Function,
         args...;
+        maxtime = 10.0,
+        optim_method = 1,
+        solver = nothing,
+        verbose = true,
         kwargs...
 )
     activation = deepcopy(activation_structure)
@@ -80,41 +114,20 @@ function optimizeActivation(
         controlObjective,
         filament,
         activation,
-        selfWeightSolve,
-        args...
-    )
-    x0 = flattenActivation(activation0)
-    prob = OptimizationProblem(f, x0, [1.0, 2.0]; kwargs...)
-    sol = solve(prob, NLopt.G_MLSL(), local_method = NLopt.LN_NELDERMEAD(), maxtime = 10.0)
-
-    sol
-end
-
-function optimizeActivation(
-        controlObjective::ConfigurationControlObjective,
-        filament::AFilament,
-        activation_structure::AbstractArray{<:AbstractActivation},
-        activations0::AbstractArray{<:AbstractArray{<:AbstractActivation}},
+        configurationSolver,
         args...;
-        kwargs...
-)
-    f = buildDistanceFunction(
-        controlObjective,
-        filament,
-        activation_structure,
-        solveIntrinsic,
-        args...
+        solver = solver,
+        verbose = verbose
     )
-    f = OptimizationFunction(f, Optimization.AutoFiniteDiff())
-
-    sols = Vector(undef, length(activations0))
-    Threads.@threads for i in eachindex(activations0)
-        x0 = flattenActivation(activations0[i])
-        prob = OptimizationProblem(f, x0, [1.0, 2.0]; kwargs...)
-        sols[i] = solve(prob, Optim.NelderMead())
+    x0 = flattenActivation(activation0; return_variant = (optim_method == 1 ? Vector : MVector))
+    prob = OptimizationProblem(f, x0, [1.0, 2.0]; kwargs...)
+    if optim_method == 1
+        sol = solve(prob, OptimizationNOMAD.NOMADOpt(), maxtime = maxtime)
+    elseif optim_method == 2
+        sol = solve(prob, NLopt.G_MLSL(), local_method = NLopt.LN_NELDERMEAD(), maxtime = maxtime)
     end
 
-    sols
+    sol
 end
 
 #########################################################################
@@ -187,121 +200,6 @@ function distance_function(
     out = out + ζ_hat_penalty
     @info "Current objective: $out"
     return out
-end
-
-function build_distance_function(
-        control_objective::ConfigurationControlObjective,
-        trunk::TrunkFast{T, N},
-        configurationSolver::Function,
-        bvp::BVProblem,
-        x_previous::Vector{Float64},
-        m0::Vector{Float64} = [0.0, 0.0, 0.0],
-        uInit::Vector{Float64} = [
-            0.0,
-            0.0,
-            0.0,
-            1.0,
-            0.0,
-            0.0,
-            0.0,
-            1.0,
-            0.0,
-            0.0,
-            0.0,
-            1.0,
-            m0[1],
-            m0[2],
-            m0[3]
-        ],
-        Zspan = (0.0, trunk.trunk.L), args...; optimize_bc = false,
-        abstol = 1e-8,
-        reltol = 1e-6,
-        kwargs...) where {T, N}
-    arg = control_objective.args
-    prop = control_objective.properties
-    types = control_objective.propertyTypes
-    weights = control_objective.weights
-    if optimize_bc
-        return (
-            (x, p) -> begin
-            X = [x[1:12]..., 0.0, x[13:26]..., 0.0, x[27], x[28]]
-            γ = (
-                SMatrix{3, 5, Float64}(transpose(reshape(X[1:15], (5, 3)))),
-                SMatrix{3, 5, Float64}(transpose(reshape(X[16:30], (5, 3))))
-            )
-
-            # Include rotation as DOFs                  
-            bc_v = rotate_bc(trunk, (x[29], x[30]))
-
-            new_bcs = (x[29] == bvp.p[6][1] && x[30] == bvp.p[6][2]) ? nothing :
-                      SVector{12, Float64}(bc_v)
-
-            sol, _ = configurationSolver(
-                bvp,
-                trunk,
-                γ,
-                args...;
-                uInit = [bc_v..., 0.0, 0.0, 0.0],
-                new_bcs = new_bcs,
-                abstol = abstol,
-                reltol = reltol,
-                kwargs...
-            )
-
-            out = 0.0
-            for i in eachindex(prop)
-                prop_i = prop[i]
-                arg_i = arg[i]
-                t = types[i]
-                weights_i = weights[i]
-                for j in eachindex(arg_i)
-                    sol_arg = sol(arg_i[j])
-                    if t === r
-                        sol_prop = sol_arg[1:3]
-                        dist_r = euclidean(sol_prop, prop_i[j, :])
-                        out = out + weights_i[j] * dist_r
-                    elseif t === d3
-                        sol_prop = sol_arg[10:12]
-                        dist_d3 = euclidean(sol_prop, prop_i[j, :])
-                        out = out + weights_i[j] * dist_d3
-                    end
-                end
-            end
-            @info "Current objective: $out"
-            return out
-        end
-        )
-    else
-        return (x, p) -> begin
-            X = [x[1:12]..., 0.0, x[13:26]..., 0.0, x[27], x[28]]
-            γ = (
-                SMatrix{3, 5, Float64}(transpose(reshape(X[1:15], (5, 3)))),
-                SMatrix{3, 5, Float64}(transpose(reshape(X[16:30], (5, 3))))
-            )
-
-            sol, _ = configurationSolver(bvp, trunk, γ, args...; uInit = bvp.u0)
-
-            out = 0.0
-            for i in eachindex(prop)
-                prop_i = prop[i]
-                arg_i = arg[i]
-                t = types[i]
-                weights_i = weights[i]
-                for j in eachindex(arg_i)
-                    sol_arg = sol(arg_i[j])
-                    if t === r
-                        sol_prop = sol_arg[1:3]
-                    elseif t === d3
-                        sol_prop = sol_arg[10:12]
-                    end
-
-                    out = out + weights_i[j] * euclidean(sol_prop, prop_i[j, :])
-                end
-            end
-            @info "Current objective: $out"
-            return out
-        end
-    end
 end
 
 """
