@@ -311,4 +311,58 @@ function selfWeightBC!(residual, u, p, t)
     residual[14] = u[end][14] - 0.0
     residual[15] = u[end][15] - 0.0
 end
+
+"""
+    $(TYPEDSIGNATURES)
+
+In-place boundary condition function that defines the
+residuals that are to become identically zero at Z = 0 to solve the
+corresponding two-point BVP.
+
+The unknown function u has the following structure:
+`(u[1], u[2], u[3])` = r = filament centerline along `Z`
+
+`(
+    (u[4], u[5], u[6]),
+    (u[7], u[8], u[9]),
+    (u[10], u[11], u[12])
+)`   = `(d1, d2, d3)` = director basis along `Z`
+
+The form of the residuals implies that:
+-   `r(0)` = p[5][1:3]
+-   `d1(0)` = p[5][4:6]
+-   `d2(0)` = p[5][7:9]
+-   `d3(0)` = p[5][10:12]
+"""
+function selfWeightBCStart!(residual, u, p)
+    bc = p[5]
+    residual[1] = u[1] - bc[1]
+    residual[2] = u[2] - bc[2]
+    residual[3] = u[3] - bc[3]
+    residual[4] = u[4] - bc[4]
+    residual[5] = u[5] - bc[5]
+    residual[6] = u[6] - bc[6]
+    residual[7] = u[7] - bc[7]
+    residual[8] = u[8] - bc[8]
+    residual[9] = u[9] - bc[9]
+    residual[10] = u[10] - bc[10]
+    residual[11] = u[11] - bc[11]
+    residual[12] = u[12] - bc[12]
+end
+
+"""
+    $(TYPEDSIGNATURES)
+
+In-place boundary condition function that defines the
+residuals that are to become identically zero at Z = L to solve the
+corresponding two-point BVP.
+
+The unknown function u has the following structure:
+`(u[13], u[14], u[15])` = moments along `Z`
+"""
+function selfWeightBCEnd!(residual, u, p)
+    residual[1] = u[13] - 0.0
+    residual[2] = u[14] - 0.0
+    residual[3] = u[15] - 0.0
+end
 #endregion ===========================

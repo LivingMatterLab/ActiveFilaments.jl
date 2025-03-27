@@ -11,31 +11,33 @@ gravity. Use with non-symbolic computation only.
 
 Input parameters:
 -   `m0` = initial guess for the support moments at `Z` = 0
--   `uInit` = initial guess for the `u` solution
+-   `u0` = initial guess for the `u` solution
 -   `g_range` = range of gravitational acceleration values to step through
 
-Depending on the selected BVP solver, the gravitational acceleration stepping 
-can be necessary to ensure robust convergence to a BVP solution. 
-Typically, as little as 4 steps is sufficient.
+Depending on the selected BVP solver and the applied loading, 
+gravitational acceleration stepping can be necessary to ensure 
+robust convergence to a BVP solution. Typically, as few as 3 steps are sufficient.
 """
 function selfWeightSolve(
         filament::AFilament{T, M, A} where {T, M, A},
         activation::Vector{ActivationPiecewiseGamma},
-        m0::Vector{Float64},
-        uInit::Vector{Float64},
-        g_range::StepRangeLen
+        u0::Vector{Float64},
+        bcs::SVector{12, Float64},
+        g_range::StepRangeLen;
+        solver::Int = 1
 )
     activationFourier::Vector{ActivationFourier} = [piecewiseGammaToFourier(activation_i)
                                                     for activation_i in activation]
-    selfWeightSolve(filament, activationFourier, m0, uInit, g_range)
+    selfWeightSolve(filament, activationFourier, u0, bcs, g_range; solver = solver)
 end
 
 function selfWeightSolve(
         filament::AFilament{T, M, A} where {T, M, A},
         activation::Vector{ActivationFourier},
-        m0::Vector{Float64},
-        uInit::Vector{Float64},
-        g_range::StepRangeLen
+        u0::Vector{Float64},
+        bcs::SVector{12, Float64},
+        g_range::StepRangeLen;
+        solver::Int = 1
 )
     prefactors = computePropertyPrefactors(filament)
     precomputedQuantities = convertUQuantToStatic(
@@ -46,40 +48,40 @@ function selfWeightSolve(
     stiffness = filament.auxiliary.stiffness
     ρlin0Int = filament.auxiliary.ρlin0Int
 
-    m10::Float64, m20::Float64, m30::Float64 = m0
-    bcs = SVector{12, Float64}(uInit[1:12])
     sol = 0
     Zspan = (0.0, filament.L::Float64)
     for gi in g_range
         p = (gi, ρlin0Int, stiffness, precomputedQuantities, bcs)
-        bvp = BVProblem(selfWeightDE!, selfWeightBC!, uInit, Zspan, p)
+        bvp = TwoPointBVProblem(
+                    selfWeightDE!, 
+                    (selfWeightBCStart!, selfWeightBCEnd!), 
+                    u0, Zspan, p; 
+                    bcresid_prototype = (zeros(12), zeros(3))
+                )
 
-        sol = solve(
-            bvp,
-            Shooting(AutoVern7(Rodas4())),
-            dt = filament.L / 100.0,
-            abstol = 1e-12,
-            reltol = 1e-12
-        )
+        if solver == 1
+            sol = solve(
+                bvp,
+                Shooting(AutoVern7(Rodas4())),
+                dt = filament.L / 100.0,
+                abstol = 1e-12,
+                reltol = 1e-12
+            )
 
-        m10, m20, m30 = sol(0)[13:15]
-        uInit = [
-            uInit[1],
-            uInit[2],
-            uInit[3],
-            uInit[4],
-            uInit[5],
-            uInit[6],
-            uInit[7],
-            uInit[8],
-            uInit[9],
-            uInit[10],
-            uInit[11],
-            uInit[12],
-            m10,
-            m20,
-            m30
-        ]
+            uInit = sol.u[1]
+        elseif solver == 2
+            sol = solve(
+                bvp,
+                MIRK4(),
+                dt = filament.L / 100.0,
+                abstol = 1e-12,
+                reltol = 1e-12
+            )
+
+            uInit = sol.u
+        end
+        
+        
     end
 
     sol
