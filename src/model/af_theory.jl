@@ -505,7 +505,7 @@ Outputs a 4-element static `SVector` of numerical
 
 Used for non-symbolic computation only.
 """
-function computeUHat(Z::AbstractFloat, precomp::SMatrix{T, 6, Float64} where {T})
+function computeUHat(Z, precomp::SMatrix{T, 6, Float64} where {T})
     ζ_hat = 1.0
     u1_hat = 0.0
     u2_hat = 0.0
@@ -521,7 +521,7 @@ function computeUHat(Z::AbstractFloat, precomp::SMatrix{T, 6, Float64} where {T}
     SVector{4}(ζ_hat, u1_hat, u2_hat, u3_hat)
 end
 
-function computeUHat(Z::AbstractFloat, precomp::SVector{M, Tuple} where {M})
+function computeUHat(Z, precomp::SVector{M, Tuple} where {M})
     ζ_hat = 1.0
     u1_hat = 0.0
     u2_hat = 0.0
@@ -537,7 +537,7 @@ function computeUHat(Z::AbstractFloat, precomp::SVector{M, Tuple} where {M})
     SVector{4}(ζ_hat, u1_hat, u2_hat, u3_hat)
 end
 
-function computeUHat(Z::AbstractFloat, precomp::Tuple)
+function computeUHat(Z, precomp::Tuple)
     ζ_hat = 1.0
     u1_hat = 0.0
     u2_hat = 0.0
