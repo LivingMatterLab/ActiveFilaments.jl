@@ -36,14 +36,14 @@ function ActiveFilaments.plotReachabilityCloudRGB(sols, activationsGamma::Matrix
         kwargs...)
     if full_solution
         if gravity
-            # Assuming that second element of each sol is the support moment vector
+            # Assuming that the second element of each sol is the support moment vector
             points = [sol_i[end][1:3] for sol_i in sols]
         else
             # Case currently unused
         end
     else
         if gravity
-            # Assuming that second element of each sol is the support moment vector
+            # Assuming that the second element of each sol is the support moment vector
             points = [sol_i[1] for sol_i in sols]
         else
             points = sols.u
@@ -69,7 +69,6 @@ function ActiveFilaments.plotReachabilityCloudRGB(sols, activationsGamma::Matrix
     if isnothing(size)
         fig = Figure(resolution = resolution)
     else
-        @info "Using size instead of resolution"
         fig = Figure(size = size)
     end
     if size_to_ax
@@ -561,7 +560,9 @@ end
 function plotConfigurationTube!(
         filament::AFilament,
         sol;
-        R_outer = cubic_spline_interpolation(filament.Z, filament.R0),
+        R_outer = filament.tapered ? 
+                  cubic_spline_interpolation(filament.Z, filament.R0) : 
+                  filament.R0,
         flipped = false,
         n = 100,
         color = :black,
@@ -701,24 +702,25 @@ function plotConfigurationTube!(
 end
 
 function plotConfigurationTubesSelfWeight!(filament, activation_structure, activations;
+        bcs = [
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+            ],
         m0 = [0.0, 0.0, 0.0],
-        uInit = [
-            0.0,
-            0.0,
-            0.0,
-            1.0,
-            0.0,
-            0.0,
-            0.0,
-            1.0,
-            0.0,
-            0.0,
-            0.0,
-            1.0,
-            m0[1],
-            m0[2],
-            m0[3]
-        ], g = -9.8, Ng = 4,
+        u0 = [bcs..., m0...],
+        g = -9.8, 
+        Ng = 2,
+        solver = 1,
         kwargs...)
     g_range = range(start = 0.0, stop = g, length = Ng)
 
@@ -731,7 +733,7 @@ function plotConfigurationTubesSelfWeight!(filament, activation_structure, activ
         activationFourier_conf = [piecewiseGammaToFourier(activation)
                                   for activation in activation_conf]
 
-        sol_conf = selfWeightSolve(filament, activationFourier_conf, m0, uInit, g_range)
+        sol_conf = selfWeightSolve(filament, activationFourier_conf, u0, bcs, g_range; solver = solver)
 
         plotConfigurationTube!(filament, sol_conf; kwargs...)
     end
@@ -809,7 +811,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(
             y,
             z,
             color = fill((colors[j], opacity_fibers), n, n),
-            shading = true,
+            shading = Makie.Automatic(),
             ssao = true,
             invert_normals = true,
             background = false
@@ -821,7 +823,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(
             y,
             z,
             color = fill((colors[j], opacity_fibers), n, n),
-            shading = true,
+            shading = Makie.Automatic(),
             ssao = true,
             invert_normals = true,
             background = false
@@ -833,7 +835,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(
             y,
             z,
             color = fill((colors[j], opacity_fibers), n, n),
-            shading = true,
+            shading = Makie.Automatic(),
             ssao = true,
             invert_normals = true,
             background = false
@@ -845,7 +847,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(
             y,
             z,
             color = fill((colors[j], opacity_fibers), n, n),
-            shading = true,
+            shading = Makie.Automatic(),
             ssao = true,
             invert_normals = true,
             background = false
@@ -857,7 +859,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(
             y,
             z,
             color = fill((colors[j], opacity_fibers), n, n),
-            shading = true,
+            shading = Makie.Automatic(),
             ssao = true,
             invert_normals = true,
             background = false
@@ -869,7 +871,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(
             y,
             z,
             color = fill((colors[j], opacity_fibers), n, n),
-            shading = true,
+            shading = Makie.Automatic(),
             ssao = true,
             invert_normals = true,
             background = false
@@ -922,7 +924,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0},
                     y,
                     z,
                     color = fill((colors[j], opacity_fibers), n, n),
-                    shading = true,
+                    shading = Makie.Automatic(),
                     ssao = true,
                     invert_normals = true,
                     background = false
@@ -935,7 +937,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0},
                     y,
                     z,
                     color = fill((colors[j], opacity_fibers), n, n),
-                    shading = true,
+                    shading = Makie.Automatic(),
                     ssao = true,
                     invert_normals = true,
                     background = false
@@ -947,7 +949,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0},
                     y,
                     z,
                     color = fill((colors[j], opacity_fibers), n, n),
-                    shading = true,
+                    shading = Makie.Automatic(),
                     ssao = true,
                     invert_normals = true,
                     background = false
@@ -959,7 +961,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0},
                     y,
                     z,
                     color = fill((colors[j], opacity_fibers), n, n),
-                    shading = true,
+                    shading = Makie.Automatic(),
                     ssao = true,
                     invert_normals = true,
                     background = false
@@ -971,7 +973,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0},
                     y,
                     z,
                     color = fill((colors[j], opacity_fibers), n, n),
-                    shading = true,
+                    shading = Makie.Automatic(),
                     ssao = true,
                     invert_normals = true,
                     background = false
@@ -983,7 +985,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0},
                     y,
                     z,
                     color = fill((colors[j], opacity_fibers), n, n),
-                    shading = true,
+                    shading = Makie.Automatic(),
                     ssao = true,
                     invert_normals = true,
                     background = false
@@ -1011,7 +1013,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0},
                 y,
                 z,
                 color = fill((colors[j], opacity_fibers), n, n),
-                shading = true,
+                shading = Makie.Automatic(),
                 invert_normals = true,
                 ssao = true,
                 background = false
@@ -1023,7 +1025,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0},
                 y,
                 z,
                 color = fill((colors[j], opacity_fibers), n, n),
-                shading = true,
+                shading = Makie.Automatic(),
                 invert_normals = true,
                 ssao = true,
                 background = false
@@ -1035,7 +1037,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0},
                 y,
                 z,
                 color = fill((colors[j], opacity_fibers), n, n),
-                shading = true,
+                shading = Makie.Automatic(),
                 invert_normals = true,
                 ssao = true,
                 background = false
@@ -1047,7 +1049,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0},
                 y,
                 z,
                 color = fill((colors[j], opacity_fibers), n, n),
-                shading = true,
+                shading = Makie.Automatic(),
                 invert_normals = true,
                 ssao = true,
                 background = false
@@ -1059,7 +1061,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0},
                 y,
                 z,
                 color = fill((colors[j], opacity_fibers), n, n),
-                shading = true,
+                shading = Makie.Automatic(),
                 invert_normals = true,
                 ssao = true,
                 background = false
@@ -1071,7 +1073,7 @@ function ActiveFilaments.plotFilamentCollapsedRings!(filament::AFilament{0},
                 y,
                 z,
                 color = fill((colors[j], opacity_fibers), n, n),
-                shading = true,
+                shading = Makie.Automatic(),
                 invert_normals = true,
                 ssao = true,
                 background = false
@@ -1090,24 +1092,25 @@ tubular representation of the deformed `filament`.
 """
 function ActiveFilaments.plotConfigurationTubesSelfWeight!(filament, activation_structure,
         activations;
+        bcs = [
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+            ],
         m0 = [0.0, 0.0, 0.0],
-        uInit = [
-            0.0,
-            0.0,
-            0.0,
-            1.0,
-            0.0,
-            0.0,
-            0.0,
-            1.0,
-            0.0,
-            0.0,
-            0.0,
-            1.0,
-            m0[1],
-            m0[2],
-            m0[3]
-        ], g = -9.8, Ng = 4,
+        u0 = [bcs..., m0...],
+        g = -9.8, 
+        Ng = 2,
+        solver = 1,
         kwargs...)
     g_range = range(start = 0.0, stop = g, length = Ng)
 
@@ -1120,7 +1123,7 @@ function ActiveFilaments.plotConfigurationTubesSelfWeight!(filament, activation_
         activationFourier_conf::Vector{ActivationFourier} = [piecewiseGammaToFourier(activation)
                                                              for activation in activation_conf]
 
-        sol_conf = selfWeightSolve(filament, activationFourier_conf, m0, uInit, g_range)
+        sol_conf = selfWeightSolve(filament, activationFourier_conf, u0, bcs, g_range; solver = solver)
 
         plotConfigurationTube!(filament, sol_conf; kwargs...)
     end
@@ -1137,26 +1140,25 @@ function ActiveFilaments.plotConfigurationsSelfWeight!(
         filament,
         activation_structure,
         activations;
+        bcs = [
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+            ],
         m0 = [0.0, 0.0, 0.0],
-        uInit = [
-            0.0,
-            0.0,
-            0.0,
-            1.0,
-            0.0,
-            0.0,
-            0.0,
-            1.0,
-            0.0,
-            0.0,
-            0.0,
-            1.0,
-            m0[1],
-            m0[2],
-            m0[3]
-        ],
+        u0 = [bcs..., m0...],
         g = -9.8,
-        Ng = 4,
+        Ng = 2,
+        solver = 1,
         kwargs...
 )
     g_range = range(start = 0.0, stop = g, length = Ng)
@@ -1170,7 +1172,7 @@ function ActiveFilaments.plotConfigurationsSelfWeight!(
         activationFourier_conf::Vector{ActivationFourier} = [piecewiseGammaToFourier(activation)
                                                              for activation in activation_conf]
 
-        sol_conf = selfWeightSolve(filament, activationFourier_conf, m0, uInit, g_range)
+        sol_conf = selfWeightSolve(filament, activationFourier_conf, u0, bcs, g_range; solver = solver)
 
         plotFilamentCollapsedRings!(filament, activation_structure, sol_conf; kwargs...)
     end
