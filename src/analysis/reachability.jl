@@ -27,7 +27,8 @@ function generateIntrinsicReachVol(filament::AFilament,
     M = typeof(filament).parameters[2]
 
     (activationsFourier, activationsGamma) = generateRandomActivations(
-        activationGamma, gammaBounds, M, nTrajectories)
+        activationGamma, gammaBounds, M, nTrajectories
+        )
         
     println("Precomputation started...")
     @time precomputedQuantities = generatePrecomputedQuantitiesSA(
@@ -94,7 +95,8 @@ function generateIntrinsicReachVol(filament::AFilament,
                     activations_unrolled[i, idxs[j]] .= activationsGamma[i][j].γ
                 end
             end
-            # Stack overflow for large clouds when saving into JLD2; JLD2 is not needed for raw gammas anyway
+            # Stack overflow for large clouds when saving into JLD2.
+            # JLD2 is not needed for raw gammas anyway.
             # @save string(path, "_gamma.jld2") activations_unrolled; 
 
             CSV.write(
@@ -198,30 +200,45 @@ each configuration.
 function generateSelfWeightReachVol(filament::AFilament,
         activationGamma::Vector{ActivationPiecewiseGamma},
         gammaBounds,
-        uInit::Vector{Vector{Float64}},
+        u0::Vector{Vector{Float64}},
+        bcs::SVector{12, Float64},
         g_range::StepRangeLen,
-        nTrajectories::Int;
+        nTrajectories::Int,
+        path::String;
+        save_gamma_structs = true,
         save_full = false)
     prefactors = computePropertyPrefactors(filament)
-    (precomputedQuantities, activationsGamma) = generatePrecomputedQuantitiesSA(
+    M = typeof(filament).parameters[2]
+
+    (activationsFourier, activationsGamma) = generateRandomActivations(
+        activationGamma, gammaBounds, M, nTrajectories
+        )
+        
+    println("Precomputation started...")
+    @time precomputedQuantities = generatePrecomputedQuantitiesSA(
         filament,
-        activationGamma,
-        gammaBounds,
-        nTrajectories,
-        prefactors
+        activationsFourier,
+        prefactors,
+        nTrajectories
     )
+    println("Precomputation complete.")
     stiffness = filament.auxiliary.stiffness
     ρlin0Int = filament.auxiliary.ρlin0Int
 
+    println("Computing cloud...")
     sol = []
     for gi in g_range
-        pAll = [(gi, ρlin0Int, stiffness, precomputedQuantities[i])
+        pAll = [(gi, ρlin0Int, stiffness, precomputedQuantities[i], bcs)
                 for i in 1:nTrajectories]
         Zspan = (0.0, filament.L)
 
-        bvp = BVProblem(selfWeightDE!, selfWeightBC!, uInit[1], Zspan, pAll[1])
+        bvp = TwoPointBVProblem(
+                selfWeightDE!, 
+                (selfWeightBCStart!, selfWeightBCEnd!), 
+                u0[1], Zspan, pAll[1];
+                bcresid_prototype = (zeros(12), zeros(3)))
 
-        prob_func = let u0 = uInit, p = pAll
+        prob_func = let u0 = u0, p = pAll
             (prob, i, repeat) -> begin
                 remake(prob, u0 = u0[i], p = p[i])
             end
@@ -239,26 +256,58 @@ function generateSelfWeightReachVol(filament::AFilament,
             )
         end
 
-        println("Started solving...")
+        println(string("Started solving the cloud for g = ", gi, "..."))
         sol = solve(
             ensemble_prob,
             Shooting(AutoVern7(Rodas4())),
             EnsembleThreads(),
             trajectories = nTrajectories,
-            dt = filament.L / 20.0,
+            dt = filament.L / 100.0,
             abstol = 1e-12,
             reltol = 1e-12
         )
-        println("Finished solving...")
+        println("Finished solving.")
 
         for i in eachindex(sol)
             if save_full
-                uInit[i][13:15] = sol[i](0.0)[13:15]
+                u0[i][13:15] = sol[i](0.0)[13:15]
             else
-                uInit[i][13:15] = [sol[i][2][1], sol[i][2][2], sol[i][2][3]]
+                u0[i][13:15] = [sol[i][2][1], sol[i][2][2], sol[i][2][3]]
             end
         end
-        println("Done building uInit")
+        println("Done building u0")
+    end
+    println("Cloud computed!")
+
+    if (path != "")
+        println("Saving...")
+        @save string(path, ".jld2") sol
+
+        if save_gamma_structs
+            @save string(path, "_gamma.jld2") activationsGamma
+        else
+            n_act = [activation.N for activation in activationsGamma[1]]
+            n_act_total = sum(n_act)
+            running_totals = cumsum(n_act)
+            idxs = [i == 1 ? (1:running_totals[1]) :
+                    ((running_totals[i - 1] + 1):running_totals[i])
+                    for
+                    i in eachindex(running_totals)]
+            activations_unrolled = MMatrix{nTrajectories, n_act_total, Float64}(undef)
+            for i in 1:nTrajectories
+                for j in eachindex(idxs)
+                    activations_unrolled[i, idxs[j]] .= activationsGamma[i][j].γ
+                end
+            end
+
+            CSV.write(
+                string(path, "_gamma.csv"),
+                Tables.table(activations_unrolled),
+                writeheader = false
+            )
+        end
+
+        @save string(path, "_gammaBounds.jld2") gammaBounds
     end
 
     (sol, activationsGamma)
