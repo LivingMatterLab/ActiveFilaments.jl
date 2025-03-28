@@ -79,7 +79,7 @@ We then specify the number of configurations to compute during cloud generation:
 ```julia
 nTrajectories = 2000000
 ```
-2 million configurations typically take no more than 10 seconds to compute.
+2 million configurations without external loading typically take from several seconds to a minute to compute, depending on the number of accessible threads.
 
 We then indicate a custom directory and file path for the cloud data:
 ```julia
