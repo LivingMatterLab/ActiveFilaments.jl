@@ -3,7 +3,7 @@ ActiveFilaments.jl is a computationally efficient Julia implementation of the me
 
 [Kaczmarski, B., Moulton, D. E., Kuhl, E. & Goriely, A. Active filaments I: Curvature and torsion generation. _Journal of the Mechanics and Physics of Solids_ **164**, 104918 (2022).](https://doi.org/10.1016/j.jmps.2022.104918)
 
-It provides a 5,000,000× speed-up over traditional simulation methods for soft structures, while preserving high fidelity under large deformations. By using this package, you can design the geometry and fiber architecture in a soft deformable manipulator and simulate its deformation due to fibrillar activation. The package provides a library of analysis tools for exploratory biomechanics and soft-robotics research including fast workspace computation for active soft slender structures.
+It provides a 5,000,000× speed-up over traditional simulation methods for soft structures, while preserving high fidelity under large deformations. By using this package, you can design the geometry and fiber architecture in a soft deformable manipulator and simulate its deformation due to fibrillar activation. The package provides a library of analysis tools for exploratory soft-robotics and biomechanics research including fast workspace computation for active soft slender structures.
 
 # Installation
 Run the following command in Julia 1.10.0+:
